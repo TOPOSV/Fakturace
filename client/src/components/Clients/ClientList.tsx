@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { clientService } from '../../services';
+import ClientForm from './ClientForm';
 
 const ClientList: React.FC = () => {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingClient, setEditingClient] = useState<any>(null);
 
   useEffect(() => {
     loadClients();
@@ -20,13 +23,27 @@ const ClientList: React.FC = () => {
     }
   };
 
+  const handleEdit = (client: any) => {
+    setEditingClient(client);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingClient(null);
+  };
+
+  const handleSuccess = () => {
+    loadClients();
+  };
+
   if (loading) return <div>Načítání...</div>;
 
   return (
     <div className="page-container">
       <div className="page-header">
         <h1>Klienti</h1>
-        <button className="btn-primary">+ Nový klient</button>
+        <button className="btn-primary" onClick={() => setShowForm(true)}>+ Nový klient</button>
       </div>
       <table className="data-table">
         <thead>
@@ -41,7 +58,7 @@ const ClientList: React.FC = () => {
         </thead>
         <tbody>
           {clients.map((client) => (
-            <tr key={client.id}>
+            <tr key={client.id} onClick={() => handleEdit(client)} style={{ cursor: 'pointer' }}>
               <td>{client.company_name}</td>
               <td>{client.ico}</td>
               <td>{client.dic}</td>
@@ -52,6 +69,14 @@ const ClientList: React.FC = () => {
           ))}
         </tbody>
       </table>
+
+      {showForm && (
+        <ClientForm
+          onClose={handleCloseForm}
+          onSuccess={handleSuccess}
+          client={editingClient}
+        />
+      )}
     </div>
   );
 };

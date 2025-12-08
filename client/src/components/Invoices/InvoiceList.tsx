@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { invoiceService } from '../../services';
+import InvoiceForm from './InvoiceForm';
 import './Invoices.css';
 
 const InvoiceList: React.FC = () => {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     loadInvoices();
@@ -21,13 +23,21 @@ const InvoiceList: React.FC = () => {
     }
   };
 
+  const handleCloseForm = () => {
+    setShowForm(false);
+  };
+
+  const handleSuccess = () => {
+    loadInvoices();
+  };
+
   if (loading) return <div>Načítání...</div>;
 
   return (
     <div className="page-container">
       <div className="page-header">
         <h1>Faktury, Zálohy a Nabídky</h1>
-        <button className="btn-primary">+ Nová faktura</button>
+        <button className="btn-primary" onClick={() => setShowForm(true)}>+ Nová faktura</button>
       </div>
       <table className="data-table">
         <thead>
@@ -55,6 +65,13 @@ const InvoiceList: React.FC = () => {
           ))}
         </tbody>
       </table>
+
+      {showForm && (
+        <InvoiceForm
+          onClose={handleCloseForm}
+          onSuccess={handleSuccess}
+        />
+      )}
     </div>
   );
 };
