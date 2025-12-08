@@ -76,7 +76,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
     
     setLookingUpIco(true);
     try {
-      const data = await clientService.lookupByIco(newClientData.ico);
+      const data = await clientService.lookupByICO(newClientData.ico);
       setNewClientData({
         ...newClientData,
         company_name: data.company_name || '',
