@@ -7,10 +7,12 @@ import {
   deleteInvoice,
 } from '../controllers/invoiceController';
 import { authenticateToken } from '../middleware/auth';
+import { apiLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 
 router.use(authenticateToken);
+router.use(apiLimiter);
 
 router.get('/', getInvoices);
 router.get('/:id', getInvoice);

@@ -26,7 +26,12 @@ export const register = (req: Request, res: Response) => {
       return res.status(500).json({ error: 'Failed to register user' });
     }
 
-    const token = jwt.sign({ userId: this.lastID }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
+    const token = jwt.sign({ userId: this.lastID }, secret, { expiresIn: '7d' });
     res.status(201).json({ token, userId: this.lastID, message: 'User registered successfully' });
   });
 };
@@ -47,7 +52,12 @@ export const login = (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
+    const token = jwt.sign({ userId: user.id }, secret, { expiresIn: '7d' });
     res.json({ token, userId: user.id, email: user.email, company_name: user.company_name });
   });
 };

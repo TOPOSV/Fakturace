@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './Auth.css';
 
@@ -149,7 +149,7 @@ const Register: React.FC = () => {
           <button type="submit" className="btn-primary">Registrovat se</button>
         </form>
         <p className="auth-link">
-          Již máte účet? <a href="/login">Přihlásit se</a>
+          Již máte účet? <Link to="/login">Přihlásit se</Link>
         </p>
       </div>
     </div>
