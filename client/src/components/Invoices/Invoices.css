@@ -58,23 +58,13 @@
   margin-bottom: 10px;
 }
 
-.filter-row th {
-  padding: 5px !important;
-  background: #f9f9f9 !important;
+.data-table tbody tr {
+  height: 50px;
 }
 
-.filter-input {
-  width: 100%;
-  padding: 5px;
-  border: 1px solid #ddd;
-  border-radius: 3px;
-  font-size: 13px;
-  box-sizing: border-box;
-}
-
-.filter-input:focus {
-  outline: none;
-  border-color: #667eea;
+.data-table td {
+  vertical-align: middle;
+  height: 50px;
 }
 
 .action-buttons {

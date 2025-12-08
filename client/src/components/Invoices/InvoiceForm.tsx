@@ -20,14 +20,33 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
     notes: invoice?.notes || '',
   });
   const [items, setItems] = useState(
-    invoice?.items || [{ description: '', quantity: 1, unit_price: 0, vat_rate: 21 }]
+    invoice?.items && invoice.items.length > 0 
+      ? invoice.items 
+      : [{ description: '', quantity: 1, unit_price: '', vat_rate: 21 }]
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showNewClientForm, setShowNewClientForm] = useState(false);
+  const [newClientData, setNewClientData] = useState({
+    company_name: '',
+    ico: '',
+    dic: '',
+    address: '',
+    city: '',
+    zip: '',
+    email: '',
+    phone: '',
+  });
+  const [lookingUpIco, setLookingUpIco] = useState(false);
+  const [pricesIncludeVat, setPricesIncludeVat] = useState(true);
 
   useEffect(() => {
     loadClients();
-  }, []);
+    // If editing invoice, load its items
+    if (invoice?.id) {
+      loadInvoiceItems(invoice.id);
+    }
+  }, [invoice]);
 
   const loadClients = async () => {
     try {
@@ -35,6 +54,67 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
       setClients(data);
     } catch (error) {
       console.error('Failed to load clients:', error);
+    }
+  };
+
+  const loadInvoiceItems = async (invoiceId: number) => {
+    try {
+      const data = await invoiceService.getById(invoiceId);
+      if (data.items && data.items.length > 0) {
+        setItems(data.items);
+      }
+    } catch (error) {
+      console.error('Failed to load invoice items:', error);
+    }
+  };
+
+  const handleLookupIco = async () => {
+    if (!newClientData.ico) {
+      alert('Zadejte IČO');
+      return;
+    }
+    
+    setLookingUpIco(true);
+    try {
+      const data = await clientService.lookupByIco(newClientData.ico);
+      setNewClientData({
+        ...newClientData,
+        company_name: data.company_name || '',
+        dic: data.dic || '',
+        address: data.address || '',
+        city: data.city || '',
+        zip: data.zip || '',
+      });
+    } catch (error) {
+      alert('Nepodařilo se načíst údaje z ARES');
+    } finally {
+      setLookingUpIco(false);
+    }
+  };
+
+  const handleCreateClient = async () => {
+    if (!newClientData.company_name || !newClientData.ico) {
+      alert('Vyplňte alespoň název firmy a IČO');
+      return;
+    }
+    
+    try {
+      const newClient = await clientService.create(newClientData);
+      await loadClients();
+      setFormData({ ...formData, client_id: newClient.id.toString() });
+      setShowNewClientForm(false);
+      setNewClientData({
+        company_name: '',
+        ico: '',
+        dic: '',
+        address: '',
+        city: '',
+        zip: '',
+        email: '',
+        phone: '',
+      });
+    } catch (error) {
+      alert('Nepodařilo se vytvořit klienta');
     }
   };
 
@@ -49,7 +129,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
   };
 
   const addItem = () => {
-    setItems([...items, { description: '', quantity: 1, unit_price: 0, vat_rate: 21 }]);
+    setItems([...items, { description: '', quantity: 1, unit_price: '', vat_rate: 21 }]);
   };
 
   const removeItem = (index: number) => {
@@ -61,7 +141,15 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
   const calculateTotal = () => {
     let subtotal = 0;
     items.forEach((item: any) => {
-      subtotal += item.quantity * item.unit_price;
+      const price = parseFloat(item.unit_price) || 0;
+      const qty = parseFloat(item.quantity) || 0;
+      if (pricesIncludeVat) {
+        // If prices include VAT, remove VAT to get subtotal
+        const priceWithoutVat = price / 1.21;
+        subtotal += qty * priceWithoutVat;
+      } else {
+        subtotal += qty * price;
+      }
     });
     const vat = subtotal * 0.21;
     return { subtotal, vat, total: subtotal + vat };
@@ -78,17 +166,23 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
       return;
     }
 
-    if (items.some((item: any) => !item.description || item.unit_price <= 0)) {
+    if (items.some((item: any) => !item.description || !item.unit_price || parseFloat(item.unit_price) <= 0)) {
       setError('Vyplňte všechny položky faktury');
       setLoading(false);
       return;
     }
 
     try {
+      const processedItems = items.map((item: any) => ({
+        ...item,
+        unit_price: parseFloat(item.unit_price) || 0,
+        quantity: parseFloat(item.quantity) || 1,
+      }));
+      
       const data = {
         ...formData,
         client_id: parseInt(formData.client_id),
-        items: items,
+        items: processedItems,
       };
       
       if (invoice) {
@@ -121,19 +215,30 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
           <div className="form-row">
             <div className="form-group flex-2">
               <label>Klient *</label>
-              <select
-                name="client_id"
-                value={formData.client_id}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Vyberte klienta</option>
-                {clients.map(client => (
-                  <option key={client.id} value={client.id}>
-                    {client.company_name} {client.ico && `(IČO: ${client.ico})`}
-                  </option>
-                ))}
-              </select>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <select
+                  name="client_id"
+                  value={formData.client_id}
+                  onChange={handleChange}
+                  required
+                  style={{ flex: 1 }}
+                >
+                  <option value="">Vyberte klienta</option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.id}>
+                      {client.company_name} {client.ico && `(IČO: ${client.ico})`}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowNewClientForm(!showNewClientForm)}
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  + Nový klient
+                </button>
+              </div>
             </div>
             <div className="form-group flex-1">
               <label>Typ *</label>
@@ -149,6 +254,99 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
               </select>
             </div>
           </div>
+
+          {showNewClientForm && (
+            <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '5px', marginBottom: '20px', border: '1px solid #ddd' }}>
+              <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>Nový klient</h3>
+              <div className="form-row">
+                <div className="form-group flex-1">
+                  <label>IČO *</label>
+                  <input
+                    type="text"
+                    value={newClientData.ico}
+                    onChange={(e) => setNewClientData({ ...newClientData, ico: e.target.value })}
+                    placeholder="IČO"
+                  />
+                </div>
+                <div className="form-group" style={{ flex: '0 0 auto', display: 'flex', alignItems: 'flex-end' }}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={handleLookupIco}
+                    disabled={lookingUpIco}
+                  >
+                    {lookingUpIco ? 'Vyhledávám...' : 'Vyhledat v ARES'}
+                  </button>
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Název firmy *</label>
+                <input
+                  type="text"
+                  value={newClientData.company_name}
+                  onChange={(e) => setNewClientData({ ...newClientData, company_name: e.target.value })}
+                  placeholder="Název firmy"
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group flex-1">
+                  <label>DIČ</label>
+                  <input
+                    type="text"
+                    value={newClientData.dic}
+                    onChange={(e) => setNewClientData({ ...newClientData, dic: e.target.value })}
+                    placeholder="DIČ"
+                  />
+                </div>
+                <div className="form-group flex-1">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    value={newClientData.email}
+                    onChange={(e) => setNewClientData({ ...newClientData, email: e.target.value })}
+                    placeholder="Email"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group flex-2">
+                  <label>Adresa</label>
+                  <input
+                    type="text"
+                    value={newClientData.address}
+                    onChange={(e) => setNewClientData({ ...newClientData, address: e.target.value })}
+                    placeholder="Ulice a číslo"
+                  />
+                </div>
+                <div className="form-group flex-1">
+                  <label>Město</label>
+                  <input
+                    type="text"
+                    value={newClientData.city}
+                    onChange={(e) => setNewClientData({ ...newClientData, city: e.target.value })}
+                    placeholder="Město"
+                  />
+                </div>
+                <div className="form-group" style={{ flex: '0 0 100px' }}>
+                  <label>PSČ</label>
+                  <input
+                    type="text"
+                    value={newClientData.zip}
+                    onChange={(e) => setNewClientData({ ...newClientData, zip: e.target.value })}
+                    placeholder="PSČ"
+                  />
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleCreateClient}
+                style={{ width: '100%' }}
+              >
+                Vytvořit klienta
+              </button>
+            </div>
+          )}
 
           <div className="form-row">
             <div className="form-group flex-1">
@@ -183,11 +381,34 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
           </div>
 
           <div className="form-group">
-            <label>Položky faktury *</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <label style={{ margin: 0 }}>Položky faktury *</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <label style={{ margin: 0, fontSize: '14px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    checked={!pricesIncludeVat}
+                    onChange={() => setPricesIncludeVat(false)}
+                    style={{ marginRight: '5px' }}
+                  />
+                  Ceny bez DPH
+                </label>
+                <label style={{ margin: 0, fontSize: '14px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    checked={pricesIncludeVat}
+                    onChange={() => setPricesIncludeVat(true)}
+                    style={{ marginRight: '5px' }}
+                  />
+                  Ceny s DPH
+                </label>
+              </div>
+            </div>
             {items.map((item: any, index: number) => (
               <div key={index} className="invoice-item" style={{ marginBottom: '10px', padding: '10px', background: '#f9f9f9', borderRadius: '5px' }}>
                 <div className="form-row">
                   <div className="form-group flex-2">
+                    <label style={{ fontSize: '12px', marginBottom: '3px', display: 'block', color: '#666' }}>Název položky</label>
                     <input
                       type="text"
                       placeholder="Popis položky"
@@ -197,22 +418,26 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
                     />
                   </div>
                   <div className="form-group" style={{ flex: '0 0 80px' }}>
+                    <label style={{ fontSize: '12px', marginBottom: '3px', display: 'block', color: '#666' }}>Množství</label>
                     <input
                       type="number"
                       placeholder="Ks"
                       value={item.quantity}
-                      onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 1)}
+                      onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                       min="0.01"
                       step="0.01"
                       required
                     />
                   </div>
                   <div className="form-group flex-1">
+                    <label style={{ fontSize: '12px', marginBottom: '3px', display: 'block', color: '#666' }}>
+                      Cena/ks {pricesIncludeVat ? '(s DPH)' : '(bez DPH)'}
+                    </label>
                     <input
                       type="number"
-                      placeholder="Cena/ks"
+                      placeholder="0.00"
                       value={item.unit_price}
-                      onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                      onChange={(e) => handleItemChange(index, 'unit_price', e.target.value)}
                       min="0"
                       step="0.01"
                       required
@@ -221,7 +446,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
                   <button
                     type="button"
                     onClick={() => removeItem(index)}
-                    style={{ padding: '10px', background: '#dc3545', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                    style={{ padding: '10px', background: '#dc3545', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', marginTop: '20px' }}
                     disabled={items.length === 1}
                   >
                     ×
