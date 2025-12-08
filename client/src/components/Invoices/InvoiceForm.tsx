@@ -5,22 +5,23 @@ import '../Clients/ClientForm.css';
 interface InvoiceFormProps {
   onClose: () => void;
   onSuccess: () => void;
+  invoice?: any;
 }
 
-const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess }) => {
+const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }) => {
   const [clients, setClients] = useState<any[]>([]);
   const [formData, setFormData] = useState({
-    client_id: '',
-    type: 'invoice',
-    issue_date: new Date().toISOString().split('T')[0],
-    due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    tax_date: new Date().toISOString().split('T')[0],
-    currency: 'CZK',
-    notes: '',
+    client_id: invoice?.client_id?.toString() || '',
+    type: invoice?.type || 'invoice',
+    issue_date: invoice?.issue_date ? new Date(invoice.issue_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    due_date: invoice?.due_date ? new Date(invoice.due_date).toISOString().split('T')[0] : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    tax_date: invoice?.tax_date ? new Date(invoice.tax_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    currency: invoice?.currency || 'CZK',
+    notes: invoice?.notes || '',
   });
-  const [items, setItems] = useState([
-    { description: '', quantity: 1, unit_price: 0, vat_rate: 21 }
-  ]);
+  const [items, setItems] = useState(
+    invoice?.items || [{ description: '', quantity: 1, unit_price: 0, vat_rate: 21 }]
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -53,13 +54,13 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess }) => {
 
   const removeItem = (index: number) => {
     if (items.length > 1) {
-      setItems(items.filter((_, i) => i !== index));
+      setItems(items.filter((_item: any, i: number) => i !== index));
     }
   };
 
   const calculateTotal = () => {
     let subtotal = 0;
-    items.forEach(item => {
+    items.forEach((item: any) => {
       subtotal += item.quantity * item.unit_price;
     });
     const vat = subtotal * 0.21;
@@ -77,22 +78,28 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess }) => {
       return;
     }
 
-    if (items.some(item => !item.description || item.unit_price <= 0)) {
+    if (items.some((item: any) => !item.description || item.unit_price <= 0)) {
       setError('Vyplňte všechny položky faktury');
       setLoading(false);
       return;
     }
 
     try {
-      await invoiceService.create({
+      const data = {
         ...formData,
         client_id: parseInt(formData.client_id),
         items: items,
-      });
+      };
+      
+      if (invoice) {
+        await invoiceService.update(invoice.id, data);
+      } else {
+        await invoiceService.create(data);
+      }
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Nepodařilo se vytvořit fakturu');
+      setError(err.response?.data?.error || `Nepodařilo se ${invoice ? 'upravit' : 'vytvořit'} fakturu`);
     } finally {
       setLoading(false);
     }
@@ -104,7 +111,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess }) => {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
         <div className="modal-header">
-          <h2>Nová faktura</h2>
+          <h2>{invoice ? 'Upravit fakturu' : 'Nová faktura'}</h2>
           <button className="close-btn" onClick={onClose}>×</button>
         </div>
 
@@ -177,7 +184,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess }) => {
 
           <div className="form-group">
             <label>Položky faktury *</label>
-            {items.map((item, index) => (
+            {items.map((item: any, index: number) => (
               <div key={index} className="invoice-item" style={{ marginBottom: '10px', padding: '10px', background: '#f9f9f9', borderRadius: '5px' }}>
                 <div className="form-row">
                   <div className="form-group flex-2">
@@ -258,7 +265,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess }) => {
               Zrušit
             </button>
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Vytvářím...' : 'Vytvořit fakturu'}
+              {loading ? (invoice ? 'Ukládám...' : 'Vytvářím...') : (invoice ? 'Uložit změny' : 'Vytvořit fakturu')}
             </button>
           </div>
         </form>

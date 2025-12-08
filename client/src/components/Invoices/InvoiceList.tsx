@@ -8,11 +8,17 @@ const InvoiceList: React.FC = () => {
   const [filteredInvoices, setFilteredInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<any>(null);
+  const [quickFilter, setQuickFilter] = useState<string>('all');
   const [filters, setFilters] = useState({
     number: '',
     client_name: '',
     type: '',
     status: '',
+    issue_date: '',
+    due_date: '',
+    amount_min: '',
+    amount_max: '',
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -24,7 +30,7 @@ const InvoiceList: React.FC = () => {
   useEffect(() => {
     applyFilters();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invoices, filters]);
+  }, [invoices, filters, quickFilter]);
 
   const loadInvoices = async () => {
     try {
@@ -40,6 +46,18 @@ const InvoiceList: React.FC = () => {
   const applyFilters = () => {
     let filtered = [...invoices];
     
+    // Apply quick filter first
+    if (quickFilter === 'paid') {
+      filtered = filtered.filter(inv => inv.status === 'paid');
+    } else if (quickFilter === 'unpaid') {
+      filtered = filtered.filter(inv => inv.status === 'unpaid' || inv.status === 'sent' || inv.status === 'draft');
+    } else if (quickFilter === 'overdue') {
+      filtered = filtered.filter(inv => inv.status === 'overdue');
+    } else if (quickFilter === 'archive') {
+      filtered = filtered.filter(inv => inv.status === 'cancelled');
+    }
+    
+    // Apply column filters
     if (filters.number) {
       filtered = filtered.filter(inv => 
         inv.number?.toLowerCase().includes(filters.number.toLowerCase())
@@ -56,6 +74,22 @@ const InvoiceList: React.FC = () => {
     if (filters.status) {
       filtered = filtered.filter(inv => inv.status === filters.status);
     }
+    if (filters.issue_date) {
+      filtered = filtered.filter(inv => 
+        new Date(inv.issue_date).toLocaleDateString('cs-CZ').includes(filters.issue_date)
+      );
+    }
+    if (filters.due_date) {
+      filtered = filtered.filter(inv => 
+        new Date(inv.due_date).toLocaleDateString('cs-CZ').includes(filters.due_date)
+      );
+    }
+    if (filters.amount_min) {
+      filtered = filtered.filter(inv => inv.total >= parseFloat(filters.amount_min));
+    }
+    if (filters.amount_max) {
+      filtered = filtered.filter(inv => inv.total <= parseFloat(filters.amount_max));
+    }
     
     setFilteredInvoices(filtered);
     setCurrentPage(1);
@@ -65,8 +99,40 @@ const InvoiceList: React.FC = () => {
     setFilters({ ...filters, [field]: value });
   };
 
+  const showConfirmDialog = (message: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const dialog = document.createElement('div');
+      dialog.className = 'custom-dialog-overlay';
+      dialog.innerHTML = `
+        <div class="custom-dialog">
+          <div class="custom-dialog-header">Potvrzení</div>
+          <div class="custom-dialog-body">${message}</div>
+          <div class="custom-dialog-footer">
+            <button class="custom-dialog-btn custom-dialog-btn-cancel">Zrušit</button>
+            <button class="custom-dialog-btn custom-dialog-btn-confirm">Potvrdit</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(dialog);
+      
+      const confirmBtn = dialog.querySelector('.custom-dialog-btn-confirm');
+      const cancelBtn = dialog.querySelector('.custom-dialog-btn-cancel');
+      
+      confirmBtn?.addEventListener('click', () => {
+        document.body.removeChild(dialog);
+        resolve(true);
+      });
+      
+      cancelBtn?.addEventListener('click', () => {
+        document.body.removeChild(dialog);
+        resolve(false);
+      });
+    });
+  };
+
   const handleDelete = async (id: number) => {
-    if (!window.confirm('Opravdu chcete smazat tuto fakturu?')) return;
+    const confirmed = await showConfirmDialog('Opravdu chcete smazat tuto fakturu?');
+    if (!confirmed) return;
     
     try {
       await invoiceService.delete(id);
@@ -83,6 +149,9 @@ const InvoiceList: React.FC = () => {
       return;
     }
     
+    const confirmed = await showConfirmDialog(`Označit fakturu ${invoice.number} jako uhrazenou?`);
+    if (!confirmed) return;
+    
     try {
       await invoiceService.update(invoice.id, { status: 'paid' });
       loadInvoices();
@@ -93,12 +162,18 @@ const InvoiceList: React.FC = () => {
   };
 
   const handleEdit = (invoice: any) => {
-    // TODO: Implement edit functionality
-    alert('Úprava faktury bude implementována v další verzi');
+    setEditingInvoice(invoice);
+    setShowForm(true);
+  };
+
+  const handleExportPDF = (invoice: any) => {
+    alert(`Export faktury ${invoice.number} do PDF bude implementován v další verzi`);
+    // TODO: Implement PDF generation
   };
 
   const handleCloseForm = () => {
     setShowForm(false);
+    setEditingInvoice(null);
   };
 
   const handleSuccess = () => {
@@ -107,13 +182,14 @@ const InvoiceList: React.FC = () => {
 
   const getStatusText = (status: string) => {
     const statusMap: { [key: string]: string } = {
-      'draft': 'Koncept',
-      'sent': 'Odesláno',
-      'paid': 'Zaplaceno',
-      'overdue': 'Po splatnosti',
-      'cancelled': 'Zrušeno'
+      'draft': 'KONCEPT',
+      'sent': 'ODESLÁNO',
+      'paid': 'UHRAZENO',
+      'unpaid': 'NEUHRAZENO',
+      'overdue': 'PO SPLATNOSTI',
+      'cancelled': 'ZRUŠENO'
     };
-    return statusMap[status] || status;
+    return statusMap[status] || status.toUpperCase();
   };
 
   // Pagination
@@ -131,23 +207,37 @@ const InvoiceList: React.FC = () => {
         <button className="btn-primary" onClick={() => setShowForm(true)}>+ Nová faktura</button>
       </div>
 
-      <div className="table-controls">
-        <div>
-          Zobrazit: 
-          <select 
-            value={itemsPerPage} 
-            onChange={(e) => setItemsPerPage(Number(e.target.value))}
-            style={{ marginLeft: '10px', padding: '5px' }}
-          >
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
-          <span style={{ marginLeft: '15px' }}>
-            Celkem: {filteredInvoices.length} faktur
-          </span>
-        </div>
+      <div className="quick-filters">
+        <button 
+          className={`quick-filter-btn ${quickFilter === 'all' ? 'active' : ''}`}
+          onClick={() => setQuickFilter('all')}
+        >
+          VŠE
+        </button>
+        <button 
+          className={`quick-filter-btn ${quickFilter === 'paid' ? 'active' : ''}`}
+          onClick={() => setQuickFilter('paid')}
+        >
+          UHRAZENO
+        </button>
+        <button 
+          className={`quick-filter-btn ${quickFilter === 'unpaid' ? 'active' : ''}`}
+          onClick={() => setQuickFilter('unpaid')}
+        >
+          NEUHRAZENO
+        </button>
+        <button 
+          className={`quick-filter-btn ${quickFilter === 'overdue' ? 'active' : ''}`}
+          onClick={() => setQuickFilter('overdue')}
+        >
+          PO SPLATNOSTI
+        </button>
+        <button 
+          className={`quick-filter-btn ${quickFilter === 'archive' ? 'active' : ''}`}
+          onClick={() => setQuickFilter('archive')}
+        >
+          ARCHIV
+        </button>
       </div>
 
       <table className="data-table">
@@ -159,6 +249,7 @@ const InvoiceList: React.FC = () => {
             <th>Datum vystavení</th>
             <th>Splatnost</th>
             <th>Částka</th>
+            <th>Bez DPH</th>
             <th>Stav</th>
             <th>Akce</th>
           </tr>
@@ -193,8 +284,42 @@ const InvoiceList: React.FC = () => {
                 <option value="quote">Nabídka</option>
               </select>
             </th>
-            <th></th>
-            <th></th>
+            <th>
+              <input
+                type="text"
+                placeholder="Filtr..."
+                value={filters.issue_date}
+                onChange={(e) => handleFilterChange('issue_date', e.target.value)}
+                className="filter-input"
+              />
+            </th>
+            <th>
+              <input
+                type="text"
+                placeholder="Filtr..."
+                value={filters.due_date}
+                onChange={(e) => handleFilterChange('due_date', e.target.value)}
+                className="filter-input"
+              />
+            </th>
+            <th>
+              <input
+                type="number"
+                placeholder="Min-Max"
+                value={filters.amount_min}
+                onChange={(e) => handleFilterChange('amount_min', e.target.value)}
+                className="filter-input"
+                style={{ width: '48%', display: 'inline-block' }}
+              />
+              <input
+                type="number"
+                placeholder=""
+                value={filters.amount_max}
+                onChange={(e) => handleFilterChange('amount_max', e.target.value)}
+                className="filter-input"
+                style={{ width: '48%', display: 'inline-block', marginLeft: '4%' }}
+              />
+            </th>
             <th></th>
             <th>
               <select
@@ -205,7 +330,8 @@ const InvoiceList: React.FC = () => {
                 <option value="">Vše</option>
                 <option value="draft">Koncept</option>
                 <option value="sent">Odesláno</option>
-                <option value="paid">Zaplaceno</option>
+                <option value="paid">Uhrazeno</option>
+                <option value="unpaid">Neuhrazeno</option>
                 <option value="overdue">Po splatnosti</option>
               </select>
             </th>
@@ -215,76 +341,109 @@ const InvoiceList: React.FC = () => {
         <tbody>
           {currentItems.length === 0 ? (
             <tr>
-              <td colSpan={8} style={{ textAlign: 'center', padding: '20px' }}>
+              <td colSpan={9} style={{ textAlign: 'center', padding: '20px' }}>
                 Žádné faktury nenalezeny
               </td>
             </tr>
           ) : (
-            currentItems.map((invoice) => (
-              <tr key={invoice.id}>
-                <td>{invoice.number}</td>
-                <td>{invoice.client_name}</td>
-                <td>{invoice.type === 'invoice' ? 'Faktura' : invoice.type === 'proforma' ? 'Záloha' : 'Nabídka'}</td>
-                <td>{new Date(invoice.issue_date).toLocaleDateString('cs-CZ')}</td>
-                <td>{new Date(invoice.due_date).toLocaleDateString('cs-CZ')}</td>
-                <td>{invoice.total?.toFixed(2)} {invoice.currency}</td>
-                <td><span className={`status-badge ${invoice.status}`}>{getStatusText(invoice.status)}</span></td>
-                <td className="action-buttons">
-                  <button
-                    onClick={() => handlePay(invoice)}
-                    className="action-btn pay-btn"
-                    title="Uhradit"
-                    disabled={invoice.status === 'paid'}
-                  >
-                    💳
-                  </button>
-                  <button
-                    onClick={() => handleEdit(invoice)}
-                    className="action-btn edit-btn"
-                    title="Upravit"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    onClick={() => handleDelete(invoice.id)}
-                    className="action-btn delete-btn"
-                    title="Smazat"
-                  >
-                    🗑️
-                  </button>
-                </td>
-              </tr>
-            ))
+            currentItems.map((invoice) => {
+              const subtotal = invoice.subtotal || (invoice.total / 1.21);
+              return (
+                <tr key={invoice.id}>
+                  <td>{invoice.number}</td>
+                  <td>{invoice.client_name}</td>
+                  <td>{invoice.type === 'invoice' ? 'Faktura' : invoice.type === 'proforma' ? 'Záloha' : 'Nabídka'}</td>
+                  <td>{new Date(invoice.issue_date).toLocaleDateString('cs-CZ')}</td>
+                  <td>{new Date(invoice.due_date).toLocaleDateString('cs-CZ')}</td>
+                  <td>{invoice.total?.toFixed(2)} {invoice.currency}</td>
+                  <td>{subtotal?.toFixed(2)} {invoice.currency}</td>
+                  <td><span className={`status-badge ${invoice.status}`}>{getStatusText(invoice.status)}</span></td>
+                  <td className="action-buttons">
+                    <button
+                      onClick={() => handlePay(invoice)}
+                      className="action-btn pay-btn"
+                      title="Uhradit"
+                      disabled={invoice.status === 'paid'}
+                    >
+                      💳
+                    </button>
+                    <button
+                      onClick={() => handleEdit(invoice)}
+                      className="action-btn edit-btn"
+                      title="Upravit"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={() => handleExportPDF(invoice)}
+                      className="action-btn pdf-btn"
+                      title="Export do PDF"
+                    >
+                      📄
+                    </button>
+                    <button
+                      onClick={() => handleDelete(invoice.id)}
+                      className="action-btn delete-btn"
+                      title="Smazat"
+                    >
+                      🗑️
+                    </button>
+                  </td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>
 
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            className="pagination-btn"
-          >
-            « Předchozí
-          </button>
-          <span className="pagination-info">
-            Strana {currentPage} z {totalPages}
-          </span>
-          <button
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            className="pagination-btn"
-          >
-            Další »
-          </button>
+      <div className="table-footer">
+        <div className="table-controls">
+          <div>
+            Zobrazit: 
+            <select 
+              value={itemsPerPage} 
+              onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              style={{ marginLeft: '10px', padding: '5px' }}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span style={{ marginLeft: '15px' }}>
+              Celkem: {filteredInvoices.length} faktur
+            </span>
+          </div>
         </div>
-      )}
+
+        {totalPages > 1 && (
+          <div className="pagination">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="pagination-btn"
+            >
+              « Předchozí
+            </button>
+            <span className="pagination-info">
+              Strana {currentPage} z {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="pagination-btn"
+            >
+              Další »
+            </button>
+          </div>
+        )}
+      </div>
 
       {showForm && (
         <InvoiceForm
           onClose={handleCloseForm}
           onSuccess={handleSuccess}
+          invoice={editingInvoice}
         />
       )}
     </div>
