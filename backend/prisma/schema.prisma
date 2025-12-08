@@ -1,0 +1,294 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User and Authentication
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String?
+  lastName  String?
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company   Company?
+  invoices  Invoice[]
+  offers    Offer[]
+  orders    Order[]
+}
+
+// Company Settings
+model Company {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  name            String
+  ico             String   @unique // IČ (Company ID)
+  dic             String?  // DIČ (VAT ID)
+  isVatPayer      Boolean  @default(false)
+  street          String?
+  city            String?
+  postalCode      String?
+  country         String   @default("CZ")
+  phone           String?
+  email           String?
+  bankAccount     String?
+  iban            String?
+  swift           String?
+  logo            String?
+  invoicePrefix   String   @default("F")
+  nextInvoiceNum  Int      @default(1)
+  offerPrefix     String   @default("N")
+  nextOfferNum    Int      @default(1)
+  defaultVatRate  Decimal  @default(21)
+  defaultDuedays  Int      @default(14)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id])
+  bankAccounts    BankAccount[]
+  invoices        Invoice[]
+  offers          Offer[]
+}
+
+// Clients (Customers/Suppliers)
+model Client {
+  id              String   @id @default(cuid())
+  type            String   // "customer" or "supplier"
+  name            String
+  ico             String?  // IČ
+  dic             String?  // DIČ
+  isVatPayer      Boolean  @default(false)
+  street          String?
+  city            String?
+  postalCode      String?
+  country         String   @default("CZ")
+  phone           String?
+  email           String?
+  contactPerson   String?
+  defaultDiscount Decimal? @default(0)
+  defaultDuedays  Int?
+  notes           String?
+  isSolvent       Boolean  @default(true)
+  lastSolvencyCheck DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  invoices        Invoice[]
+  offers          Offer[]
+  orders          Order[]
+  payments        Payment[]
+}
+
+// Products/Services
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  unit        String   @default("ks") // pcs, hours, kg, etc.
+  price       Decimal
+  vatRate     Decimal  @default(21)
+  isService   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  invoiceItems InvoiceItem[]
+  offerItems   OfferItem[]
+}
+
+// Offers (Quotes/Nabídky)
+model Offer {
+  id              String   @id @default(cuid())
+  offerNumber     String   @unique
+  userId          String
+  companyId       String
+  clientId        String
+  issueDate       DateTime @default(now())
+  validUntil      DateTime
+  status          String   @default("sent") // sent, accepted, rejected, expired
+  subtotal        Decimal
+  vatAmount       Decimal
+  total           Decimal
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id])
+  company         Company  @relation(fields: [companyId], references: [id])
+  client          Client   @relation(fields: [clientId], references: [id])
+  items           OfferItem[]
+  orders          Order[]
+}
+
+model OfferItem {
+  id          String   @id @default(cuid())
+  offerId     String
+  productId   String?
+  description String
+  quantity    Decimal
+  unit        String   @default("ks")
+  unitPrice   Decimal
+  vatRate     Decimal
+  discount    Decimal  @default(0)
+  total       Decimal
+  createdAt   DateTime @default(now())
+
+  offer       Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id])
+}
+
+// Orders/Projects (Zakázky)
+model Order {
+  id              String   @id @default(cuid())
+  orderNumber     String   @unique
+  userId          String
+  clientId        String
+  offerId         String?
+  name            String
+  status          String   @default("new") // new, offer_sent, approved, invoiced, paid, cancelled
+  totalAmount     Decimal
+  paidAmount      Decimal  @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id])
+  client          Client   @relation(fields: [clientId], references: [id])
+  offer           Offer?   @relation(fields: [offerId], references: [id])
+  invoices        Invoice[]
+  timeline        OrderTimeline[]
+}
+
+model OrderTimeline {
+  id          String   @id @default(cuid())
+  orderId     String
+  event       String   // "created", "offer_sent", "approved", "invoiced", "paid"
+  description String?
+  createdAt   DateTime @default(now())
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+// Invoices
+model Invoice {
+  id              String   @id @default(cuid())
+  invoiceNumber   String   @unique
+  type            String   @default("standard") // standard, proforma, credit_note
+  userId          String
+  companyId       String
+  clientId        String
+  orderId         String?
+  issueDate       DateTime @default(now())
+  dueDate         DateTime
+  taxDate         DateTime?
+  status          String   @default("unpaid") // unpaid, partially_paid, paid, overdue, cancelled
+  subtotal        Decimal
+  vatAmount       Decimal
+  total           Decimal
+  paidAmount      Decimal  @default(0)
+  currency        String   @default("CZK")
+  notes           String?
+  variableSymbol  String?
+  constantSymbol  String?
+  specificSymbol  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id])
+  company         Company  @relation(fields: [companyId], references: [id])
+  client          Client   @relation(fields: [clientId], references: [id])
+  order           Order?   @relation(fields: [orderId], references: [id])
+  items           InvoiceItem[]
+  payments        Payment[]
+  reminders       Reminder[]
+}
+
+model InvoiceItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  productId   String?
+  description String
+  quantity    Decimal
+  unit        String   @default("ks")
+  unitPrice   Decimal
+  vatRate     Decimal
+  discount    Decimal  @default(0)
+  total       Decimal
+  createdAt   DateTime @default(now())
+
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id])
+}
+
+// Payments
+model Payment {
+  id              String   @id @default(cuid())
+  invoiceId       String?
+  clientId        String?
+  amount          Decimal
+  currency        String   @default("CZK")
+  paymentDate     DateTime
+  variableSymbol  String?
+  bankAccountId   String?
+  transactionId   String?  @unique
+  status          String   @default("pending") // pending, matched, unmatched
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  invoice         Invoice?     @relation(fields: [invoiceId], references: [id])
+  client          Client?      @relation(fields: [clientId], references: [id])
+  bankAccount     BankAccount? @relation(fields: [bankAccountId], references: [id])
+}
+
+// Bank Accounts
+model BankAccount {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  accountNumber   String
+  bankCode        String?
+  iban            String?
+  swift           String?
+  currency        String   @default("CZK")
+  isDefault       Boolean  @default(false)
+  apiEnabled      Boolean  @default(false)
+  lastSync        DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  company         Company  @relation(fields: [companyId], references: [id])
+  payments        Payment[]
+}
+
+// Reminders
+model Reminder {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  type        String   // "first", "second", "final"
+  sentAt      DateTime @default(now())
+  sentTo      String
+  status      String   @default("sent")
+
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+// Integration Settings
+model IntegrationSettings {
+  id          String   @id @default(cuid())
+  name        String   @unique // "bank_api", "eshop", "crm", "dativery", "integroid"
+  type        String   // "bank", "eshop", "crm", "integrator"
+  isEnabled   Boolean  @default(false)
+  config      Json?    // Store API keys, endpoints, etc.
+  lastSync    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
