@@ -3,6 +3,7 @@
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
 }
 
 .page-header {
@@ -59,28 +60,98 @@
 }
 
 .data-table tbody tr {
-  height: 50px;
+  height: 55px;
+  transition: background-color 0.2s;
+}
+
+.data-table tbody tr:hover {
+  background-color: #f8f9fa;
 }
 
 .data-table td {
   vertical-align: middle;
-  height: 50px;
+  height: 55px;
+  padding: 10px 12px;
+  white-space: nowrap;
+}
+
+.data-table th {
+  white-space: nowrap;
+  padding: 12px;
+}
+
+/* Specific column widths for better layout */
+.data-table th:nth-child(1),
+.data-table td:nth-child(1) {
+  min-width: 100px; /* Číslo */
+}
+
+.data-table th:nth-child(2),
+.data-table td:nth-child(2) {
+  min-width: 180px; /* Klient */
+  max-width: 250px;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.data-table th:nth-child(3),
+.data-table td:nth-child(3) {
+  min-width: 80px; /* Typ */
+}
+
+.data-table th:nth-child(4),
+.data-table td:nth-child(4) {
+  min-width: 120px; /* Datum vystavení */
+}
+
+.data-table th:nth-child(5),
+.data-table td:nth-child(5) {
+  min-width: 120px; /* Splatnost */
+}
+
+.data-table th:nth-child(6),
+.data-table td:nth-child(6) {
+  min-width: 100px; /* Částka */
+  text-align: right;
+}
+
+.data-table th:nth-child(7),
+.data-table td:nth-child(7) {
+  min-width: 100px; /* Bez DPH */
+  text-align: right;
+}
+
+.data-table th:nth-child(8),
+.data-table td:nth-child(8) {
+  min-width: 120px; /* Stav */
+}
+
+.data-table th:nth-child(9),
+.data-table td:nth-child(9) {
+  min-width: 160px; /* Akce */
+  text-align: center;
 }
 
 .action-buttons {
   display: flex;
   gap: 5px;
   justify-content: center;
+  align-items: center;
+  height: 55px;
 }
 
 .action-btn {
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: 20px;
   cursor: pointer;
-  padding: 5px;
+  padding: 8px;
   border-radius: 3px;
   transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .action-btn:hover {
