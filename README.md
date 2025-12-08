@@ -12,8 +12,8 @@ Webová aplikace pro fakturaci podnikatelů s podporou českého právního pros
 ✅ **Evidence příjmů a výdajů** - Sledování všech finančních transakcí
 ✅ **Statistiky** - Přehledy za měsíc, kvartál a rok
 ✅ **Grafy a tabulky** - Vizualizace příjmů a výdajů
-✅ **Export do Excelu** - Export dat (připraveno)
 ✅ **Notifikace o splatnosti** - Přehled nezaplacených faktur po splatnosti
+🚧 **Export do Excelu** - Připraveno k implementaci (vyžaduje bezpečnou knihovnu)
 🚧 **Integrace** - Příprava pro banku, e-shop a CRM systémy
 
 ## Technologie
@@ -30,7 +30,6 @@ Webová aplikace pro fakturaci podnikatelů s podporou českého právního pros
 - React Router
 - Axios
 - Recharts (grafy)
-- XLSX (export)
 
 ## Instalace a spuštění
 
@@ -155,11 +154,24 @@ Databáze se automaticky vytvoří při prvním spuštění serveru. Schema je d
 
 - 📄 PDF generování faktur
 - 📧 Email notifikace
+- 📊 Excel/CSV export (bude použita bezpečná knihovna jako exceljs nebo papaparse)
 - 🏦 Integrace s bankou (FIO, ČSOB)
 - 🛒 Integrace s e-shopy
 - 👥 CRM integrace
 - 📱 Mobilní aplikace
 - 🌍 Vícejazyčná podpora
+
+## Bezpečnost
+
+Aplikace byla navržena s důrazem na bezpečnost:
+- ✅ Hashování hesel (bcrypt)
+- ✅ JWT tokeny s expirací
+- ✅ Rate limiting na všech endpointech
+- ✅ Ochrana proti SQL injection
+- ✅ CORS konfigurace
+- ✅ Žádné zranitelné závislosti v produkčním kódu
+
+**Poznámka:** Některé vývojové závislosti (react-scripts) obsahují známé zranitelnosti, ale ty nejsou součástí produkčního buildu a neovlivňují bezpečnost běžící aplikace.
 
 ## Licence
 
