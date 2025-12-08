@@ -65,10 +65,13 @@ if [ ! -f .env ]; then
     # Generate random JWT secret
     JWT_SECRET=$(openssl rand -base64 32)
     
-    # Update .env with generated secret
-    if command -v sed &> /dev/null; then
-        sed -i.bak "s|JWT_SECRET=\".*\"|JWT_SECRET=\"$JWT_SECRET\"|" .env
-        rm .env.bak
+    # Update .env with generated secret (cross-platform compatible)
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        sed -i '' "s|JWT_SECRET=\".*\"|JWT_SECRET=\"$JWT_SECRET\"|" .env
+    else
+        # Linux
+        sed -i "s|JWT_SECRET=\".*\"|JWT_SECRET=\"$JWT_SECRET\"|" .env
     fi
     
     echo -e "${YELLOW}Please update the .env file with your database credentials${NC}"
