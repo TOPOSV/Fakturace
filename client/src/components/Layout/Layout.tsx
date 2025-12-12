@@ -20,7 +20,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     <div className="layout">
       <nav className="navbar">
         <div className="navbar-brand">
-          <Link to="/dashboard">📊 Fakturace</Link>
+          {user?.logo ? (
+            <Link to="/dashboard" className="brand-with-logo">
+              <img src={user.logo} alt={user.company_name} className="brand-logo" />
+              <span>Fakturace</span>
+            </Link>
+          ) : (
+            <Link to="/dashboard">📊 Fakturace</Link>
+          )}
         </div>
         <div className="navbar-menu">
           <Link to="/dashboard">Dashboard</Link>
@@ -31,6 +38,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
         <div className="navbar-user">
           <span>{user?.company_name}</span>
+          <Link to="/settings" className="btn-settings" title="Nastavení">⚙️</Link>
           <button onClick={handleLogout} className="btn-logout">Odhlásit se</button>
         </div>
       </nav>

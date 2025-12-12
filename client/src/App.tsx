@@ -9,6 +9,7 @@ import InvoiceList from './components/Invoices/InvoiceList';
 import ClientList from './components/Clients/ClientList';
 import TransactionList from './components/Transactions/TransactionList';
 import Statistics from './components/Statistics/Statistics';
+import Settings from './components/Settings/Settings';
 import './App.css';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -33,6 +34,7 @@ function App() {
           <Route path="/clients" element={<PrivateRoute><ClientList /></PrivateRoute>} />
           <Route path="/transactions" element={<PrivateRoute><TransactionList /></PrivateRoute>} />
           <Route path="/statistics" element={<PrivateRoute><Statistics /></PrivateRoute>} />
+          <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
       </Router>

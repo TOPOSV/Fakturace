@@ -28,6 +28,8 @@ export const initializeDatabase = () => {
         country TEXT DEFAULT 'Česká republika',
         bank_account TEXT,
         phone TEXT,
+        logo TEXT,
+        stamp TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);

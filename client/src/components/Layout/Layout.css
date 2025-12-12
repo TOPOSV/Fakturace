@@ -20,6 +20,18 @@
   text-decoration: none;
 }
 
+.brand-with-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
 .navbar-menu {
   display: flex;
   gap: 30px;
@@ -45,6 +57,27 @@
 .navbar-user span {
   color: #555;
   font-weight: 500;
+}
+
+.btn-settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  text-decoration: none;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.btn-settings:hover {
+  background: #4f46e5;
+  transform: scale(1.05);
 }
 
 .btn-logout {

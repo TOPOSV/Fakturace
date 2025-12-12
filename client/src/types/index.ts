@@ -9,6 +9,8 @@ export interface User {
   zip?: string;
   phone?: string;
   bank_account?: string;
+  logo?: string;
+  stamp?: string;
 }
 
 export interface Client {

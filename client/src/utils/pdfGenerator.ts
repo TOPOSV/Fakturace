@@ -46,6 +46,8 @@ interface UserData {
   bank_account?: string;
   iban?: string;
   swift?: string;
+  logo?: string;
+  stamp?: string;
 }
 
 export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserData) => {
@@ -168,6 +170,18 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   const col1X = margin;
   const col2X = margin + (contentWidth / 2) + 10;
   const boxWidth = (contentWidth / 2) - 5;
+  
+  // ADD LOGO above supplier section if provided
+  if (userData.logo) {
+    try {
+      const logoWidth = 30;
+      const logoHeight = 15;
+      doc.addImage(userData.logo, 'PNG', col1X, yPos - 5, logoWidth, logoHeight);
+      yPos += 12; // Add space after logo
+    } catch (error) {
+      console.warn('Failed to add logo to PDF:', error);
+    }
+  }
   
   // DODAVATEL (levy sloupec) - Light blue box
   doc.setFillColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
@@ -481,6 +495,20 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.setDrawColor(colors.mediumGray[0], colors.mediumGray[1], colors.mediumGray[2]);
   doc.setLineWidth(0.3);
   doc.rect(margin, yPos + 2, 80, 25);
+  
+  // ADD STAMP inside the signature box if provided
+  if (userData.stamp) {
+    try {
+      const stampWidth = 25;
+      const stampHeight = 20;
+      const stampX = margin + 5;
+      const stampY = yPos + 5;
+      doc.addImage(userData.stamp, 'PNG', stampX, stampY, stampWidth, stampHeight);
+    } catch (error) {
+      console.warn('Failed to add stamp to PDF:', error);
+    }
+  }
+  
   yPos += 30;
   
   // ============================================
