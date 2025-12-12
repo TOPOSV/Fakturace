@@ -193,8 +193,8 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
         logoWidth = logoHeight * aspectRatio;
       }
       
-      // Position logo MUCH HIGHER above supplier box (40mm above yPos instead of 20mm)
-      const logoY = yPos - 40;
+      // Position logo above supplier box (35mm above yPos)
+      const logoY = yPos - 35;
       doc.addImage(userData.logo, 'PNG', col1X, logoY, logoWidth, logoHeight);
       // Add space after logo so supplier box doesn't overlap
       yPos += 5;
@@ -506,18 +506,19 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ============================================
   // RAZITKO A PODPIS s rameckem - ALIGNED WITH VAT TABLE
   // ============================================
-  // Position stamp section at same height as VAT summary table
-  const stampYPos = vatTableEndY - 40; // Align with VAT table top approximately
+  // Position stamp section lower (15mm down from VAT table alignment)
+  const stampYPos = vatTableEndY - 25; // Moved 15mm down (was -40, now -25)
   
   doc.setFontSize(10);
   safeSetFont('bold');
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
-  doc.text('Razítko a podpis:', pageWidth - margin - 85, stampYPos);
+  // Move text to the left (was pageWidth - margin - 85)
+  doc.text('Razítko a podpis:', margin, stampYPos);
   
-  // Signature box - positioned on right side, aligned with VAT table
+  // Signature box - positioned on left side, moved down
   doc.setDrawColor(colors.mediumGray[0], colors.mediumGray[1], colors.mediumGray[2]);
   doc.setLineWidth(0.3);
-  doc.rect(pageWidth - margin - 85, stampYPos + 2, 80, 35);
+  doc.rect(margin, stampYPos + 2, 80, 35);
   
   // ADD STAMP inside the signature box if provided - well visible
   if (userData.stamp) {
@@ -525,7 +526,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
       // Stamp dimensions: 35x30mm for excellent visibility
       const stampWidth = 35;
       const stampHeight = 30;
-      const stampX = pageWidth - margin - 80;
+      const stampX = margin + 5;
       // Position stamp 3mm from top of box
       const stampY = stampYPos + 5;
       doc.addImage(userData.stamp, 'PNG', stampX, stampY, stampWidth, stampHeight);
