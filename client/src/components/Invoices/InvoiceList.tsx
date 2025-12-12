@@ -31,7 +31,6 @@ const InvoiceList: React.FC = () => {
 
   useEffect(() => {
     applyFilters();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invoices, filters, quickFilter]);
 
   const loadInvoices = async () => {
