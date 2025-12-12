@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { invoiceService } from '../../services';
 import InvoiceForm from './InvoiceForm';
+import { generateInvoicePDF } from '../../utils/pdfGenerator';
+import axios from 'axios';
 import './Invoices.css';
 
 const InvoiceList: React.FC = () => {
@@ -166,9 +168,38 @@ const InvoiceList: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleExportPDF = (invoice: any) => {
-    alert(`Export faktury ${invoice.number} do PDF bude implementován v další verzi`);
-    // TODO: Implement PDF generation
+  const handleExportPDF = async (invoice: any) => {
+    try {
+      // Fetch full invoice details with items
+      const fullInvoiceResponse = await axios.get(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/invoices/${invoice.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      
+      const fullInvoice = fullInvoiceResponse.data;
+      
+      // Fetch user profile data
+      const userResponse = await axios.get(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/auth/profile`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      
+      const userData = userResponse.data;
+      
+      // Generate and download PDF
+      await generateInvoicePDF(fullInvoice, userData);
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      alert('Nepodařilo se exportovat fakturu do PDF');
+    }
   };
 
   const handleCloseForm = () => {
