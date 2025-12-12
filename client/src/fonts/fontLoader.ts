@@ -78,6 +78,17 @@ export const setupPDFFont = async (doc: jsPDF): Promise<string> => {
     
     if (robotoFont) {
       loadCustomFont(doc, robotoFont);
+      
+      // Also register bold and italic as the same font
+      // jsPDF will simulate these styles from the base font
+      try {
+        doc.addFont(`${robotoFont.fontName}.ttf`, robotoFont.fontName, 'bold');
+        doc.addFont(`${robotoFont.fontName}.ttf`, robotoFont.fontName, 'italic');
+        doc.addFont(`${robotoFont.fontName}.ttf`, robotoFont.fontName, 'bolditalic');
+      } catch (error) {
+        // Ignore if already added
+      }
+      
       return 'Roboto';
     }
   } catch (error) {
