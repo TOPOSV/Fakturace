@@ -87,8 +87,8 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     text: [66, 66, 66]            // Text Gray #424242
   };
   
-  // Set the loaded font (Roboto or Helvetica fallback)
-  doc.setFont(fontName);
+  // Set the loaded font (Roboto or Helvetica fallback) - must specify style!
+  doc.setFont(fontName, 'normal');
   
   // ============================================
   // HLAVNÍ NADPIS - Faktura - daňový doklad s barevným pozadím
