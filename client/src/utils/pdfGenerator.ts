@@ -151,12 +151,12 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: any) =>
       yPos = 20;
     }
     
-    const desc = doc.splitTextToSize(item.description, 85);
+    const desc = doc.splitTextToSize(item.description || '', 85);
     doc.text(desc[0] || '', 22, yPos + 5);
-    doc.text(item.quantity.toString(), 112, yPos + 5, { align: 'center' });
-    doc.text(`${item.unit_price.toFixed(2)}`, 145, yPos + 5, { align: 'right' });
-    doc.text(`${item.vat_rate}`, 160, yPos + 5, { align: 'center' });
-    doc.text(`${item.total.toFixed(2)}`, 188, yPos + 5, { align: 'right' });
+    doc.text((item.quantity || 0).toString(), 112, yPos + 5, { align: 'center' });
+    doc.text(`${(item.unit_price || 0).toFixed(2)}`, 145, yPos + 5, { align: 'right' });
+    doc.text(`${item.vat_rate || 0}`, 160, yPos + 5, { align: 'center' });
+    doc.text(`${(item.total || 0).toFixed(2)}`, 188, yPos + 5, { align: 'right' });
     
     yPos += 7;
   });
@@ -165,16 +165,16 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: any) =>
   yPos += 10;
   doc.setFont('helvetica', 'bold');
   doc.text('Mezisoučet bez DPH:', 120, yPos);
-  doc.text(`${invoice.subtotal.toFixed(2)} ${invoice.currency}`, 188, yPos, { align: 'right' });
+  doc.text(`${(invoice.subtotal || 0).toFixed(2)} ${invoice.currency || 'CZK'}`, 188, yPos, { align: 'right' });
   
   yPos += 7;
   doc.text('DPH:', 120, yPos);
-  doc.text(`${invoice.vat.toFixed(2)} ${invoice.currency}`, 188, yPos, { align: 'right' });
+  doc.text(`${(invoice.vat || 0).toFixed(2)} ${invoice.currency || 'CZK'}`, 188, yPos, { align: 'right' });
   
   yPos += 7;
   doc.setFontSize(12);
   doc.text('Celkem k úhradě:', 120, yPos);
-  doc.text(`${invoice.total.toFixed(2)} ${invoice.currency}`, 188, yPos, { align: 'right' });
+  doc.text(`${(invoice.total || 0).toFixed(2)} ${invoice.currency || 'CZK'}`, 188, yPos, { align: 'right' });
   
   // Notes
   if (invoice.notes) {
