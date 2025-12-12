@@ -20,6 +20,11 @@ export interface CustomFont {
  */
 export const loadCustomFont = (doc: jsPDF, font: CustomFont): void => {
   try {
+    // Validate font data is not a placeholder
+    if (!font.fontData || font.fontData === 'FONT_DATA_HERE' || font.fontData.length < 100) {
+      throw new Error('Font data is missing or invalid (placeholder detected)');
+    }
+    
     // Add the font to jsPDF
     doc.addFileToVFS(`${font.fontName}.ttf`, font.fontData);
     doc.addFont(`${font.fontName}.ttf`, font.fontName, font.fontStyle);
