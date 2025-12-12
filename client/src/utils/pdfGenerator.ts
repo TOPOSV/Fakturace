@@ -528,14 +528,38 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.setLineWidth(0.3);
   doc.rect(margin, stampYPos + 2, 80, 35);
   
-  // ADD STAMP inside the signature box if provided - well visible
+  // ADD STAMP inside the signature box if provided - with proper aspect ratio
   if (userData.stamp) {
     try {
-      // Stamp dimensions: 35x30mm for excellent visibility
-      const stampWidth = 35;
-      const stampHeight = 30;
+      // Stamp dimensions: Maintain aspect ratio, max 35x30mm
+      const maxStampWidth = 35;
+      const maxStampHeight = 30;
+      
+      // Load image properly to get dimensions
+      const stampImgElement = new Image();
+      stampImgElement.src = userData.stamp;
+      
+      // Wait for image to load to get real dimensions
+      await new Promise((resolve) => {
+        stampImgElement.onload = resolve;
+        // Fallback if already loaded
+        if (stampImgElement.complete) resolve(null);
+      });
+      
+      const stampAspectRatio = stampImgElement.naturalWidth / stampImgElement.naturalHeight;
+      
+      // Calculate dimensions maintaining aspect ratio
+      let stampWidth = maxStampWidth;
+      let stampHeight = stampWidth / stampAspectRatio;
+      
+      // If height exceeds max, scale down by height instead
+      if (stampHeight > maxStampHeight) {
+        stampHeight = maxStampHeight;
+        stampWidth = stampHeight * stampAspectRatio;
+      }
+      
       const stampX = margin + 5;
-      // Position stamp 3mm from top of box
+      // Position stamp 5mm from top of box
       const stampY = stampYPos + 5;
       doc.addImage(userData.stamp, 'PNG', stampX, stampY, stampWidth, stampHeight);
     } catch (error) {
