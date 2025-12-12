@@ -211,7 +211,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '1000px' }}>
         <div className="modal-header">
           <h2>{invoice ? 'Upravit fakturu' : 'Nová faktura'}</h2>
           <button className="close-btn" onClick={onClose}>×</button>
@@ -497,7 +497,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
               <strong>{totals.subtotal.toFixed(2)} Kč</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-              <span>DPH 21%:</span>
+              <span>DPH:</span>
               <strong>{totals.vat.toFixed(2)} Kč</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', borderTop: '2px solid #ddd', paddingTop: '10px', marginTop: '10px' }}>
