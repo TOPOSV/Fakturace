@@ -171,14 +171,30 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   const col2X = margin + (contentWidth / 2) + 10;
   const boxWidth = (contentWidth / 2) - 5;
   
-  // ADD LOGO above supplier section if provided - positioned HIGHER with proper dimensions
+  // ADD LOGO above supplier section if provided - positioned MUCH HIGHER with proper aspect ratio
   if (userData.logo) {
     try {
-      // Logo dimensions: 40x20mm for better visibility and proportion
-      const logoWidth = 40;
-      const logoHeight = 20;
-      // Position logo well above supplier box (15mm above current yPos)
-      const logoY = yPos - 20;
+      // Logo dimensions: Maintain aspect ratio, width limited to 40mm max, height auto-calculated
+      const maxLogoWidth = 40;
+      const maxLogoHeight = 15;
+      
+      // Create image element to get natural dimensions
+      const imgElement = new Image();
+      imgElement.src = userData.logo;
+      const aspectRatio = imgElement.naturalWidth / imgElement.naturalHeight;
+      
+      // Calculate dimensions maintaining aspect ratio
+      let logoWidth = maxLogoWidth;
+      let logoHeight = logoWidth / aspectRatio;
+      
+      // If height exceeds max, scale down by height instead
+      if (logoHeight > maxLogoHeight) {
+        logoHeight = maxLogoHeight;
+        logoWidth = logoHeight * aspectRatio;
+      }
+      
+      // Position logo MUCH HIGHER above supplier box (40mm above yPos instead of 20mm)
+      const logoY = yPos - 40;
       doc.addImage(userData.logo, 'PNG', col1X, logoY, logoWidth, logoHeight);
       // Add space after logo so supplier box doesn't overlap
       yPos += 5;
@@ -485,37 +501,40 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   });
   
   // @ts-ignore
-  yPos = doc.lastAutoTable.finalY + 10;
+  const vatTableEndY = doc.lastAutoTable.finalY;
   
   // ============================================
-  // RAZITKO A PODPIS s rameckem
+  // RAZITKO A PODPIS s rameckem - ALIGNED WITH VAT TABLE
   // ============================================
+  // Position stamp section at same height as VAT summary table
+  const stampYPos = vatTableEndY - 40; // Align with VAT table top approximately
+  
   doc.setFontSize(10);
   safeSetFont('bold');
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
-  doc.text('Razítko a podpis:', margin, yPos);
+  doc.text('Razítko a podpis:', pageWidth - margin - 85, stampYPos);
   
-  // Signature box - taller for better visibility
+  // Signature box - positioned on right side, aligned with VAT table
   doc.setDrawColor(colors.mediumGray[0], colors.mediumGray[1], colors.mediumGray[2]);
   doc.setLineWidth(0.3);
-  doc.rect(margin, yPos + 2, 80, 30);
+  doc.rect(pageWidth - margin - 85, stampYPos + 2, 80, 35);
   
-  // ADD STAMP inside the signature box if provided - positioned HIGHER for visibility
+  // ADD STAMP inside the signature box if provided - well visible
   if (userData.stamp) {
     try {
-      // Stamp dimensions: 30x25mm for better visibility
-      const stampWidth = 30;
-      const stampHeight = 25;
-      const stampX = margin + 5;
-      // Position stamp just 3mm from top of box (instead of 5mm) for better visibility
-      const stampY = yPos + 4;
+      // Stamp dimensions: 35x30mm for excellent visibility
+      const stampWidth = 35;
+      const stampHeight = 30;
+      const stampX = pageWidth - margin - 80;
+      // Position stamp 3mm from top of box
+      const stampY = stampYPos + 5;
       doc.addImage(userData.stamp, 'PNG', stampX, stampY, stampWidth, stampHeight);
     } catch (error) {
       console.warn('Failed to add stamp to PDF:', error);
     }
   }
   
-  yPos += 35;
+  yPos = vatTableEndY + 10;
   
   // ============================================
   // DOLNI CAST - ZAKONCENI s barevnym boxem
