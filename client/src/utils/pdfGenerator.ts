@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface InvoiceItem {
   description: string;
@@ -26,173 +27,322 @@ interface InvoiceData {
   currency: string;
   notes?: string;
   items: InvoiceItem[];
-  // User/company data
-  company_name?: string;
-  company_address?: string;
-  company_ico?: string;
-  company_dic?: string;
+  variable_symbol?: string;
+  constant_symbol?: string;
+  payment_method?: string;
 }
 
-export const generateInvoicePDF = async (invoice: InvoiceData, userData: any) => {
-  const doc = new jsPDF();
+interface UserData {
+  company_name?: string;
+  address?: string;
+  city?: string;
+  zip?: string;
+  ico?: string;
+  dic?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  bank_account?: string;
+  iban?: string;
+  swift?: string;
+}
+
+export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserData) => {
+  // A4 format with 20mm margins (converted to points: 1mm = 2.834645669 points)
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
   
-  // Set font
+  const margin = 20; // 20mm margins
+  const pageWidth = 210; // A4 width in mm
+  const contentWidth = pageWidth - (2 * margin);
+  
+  // Set default font
   doc.setFont('helvetica');
   
-  // Title
-  const typeText = invoice.type === 'invoice' ? 'FAKTURA' : 
-                   invoice.type === 'proforma' ? 'ZÁLOHOVÁ FAKTURA' : 'NABÍDKA';
-  doc.setFontSize(20);
+  // ============================================
+  // HLAVNÍ NADPIS - Faktura – daňový doklad
+  // ============================================
+  doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
-  doc.text(typeText, 20, 20);
+  const typeText = invoice.type === 'invoice' ? 'Faktura – daňový doklad' : 
+                   invoice.type === 'proforma' ? 'Zálohová faktura' : 'Nabídka';
+  doc.text(typeText, margin, margin + 10);
   
-  // Invoice number
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Číslo: ${invoice.number}`, 20, 30);
+  // Číslo faktury
+  doc.setFontSize(14);
+  doc.text(`Číslo: ${invoice.number}`, margin, margin + 18);
   
-  // Supplier info (left side)
+  // ============================================
+  // DVA BLOKY VEDLE SEBE - Dodavatel a Odběratel
+  // ============================================
+  let yPos = margin + 30;
+  const col1X = margin;
+  const col2X = margin + (contentWidth / 2) + 10;
+  
+  // DODAVATEL (levý sloupec)
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('Dodavatel:', 20, 45);
+  doc.text('Dodavatel:', col1X, yPos);
+  
   doc.setFont('helvetica', 'normal');
-  let yPos = 50;
+  yPos += 5;
   if (userData.company_name) {
-    doc.text(userData.company_name, 20, yPos);
+    doc.text(userData.company_name, col1X, yPos);
     yPos += 5;
   }
   if (userData.address) {
-    doc.text(userData.address, 20, yPos);
+    doc.text(userData.address, col1X, yPos);
     yPos += 5;
   }
-  if (userData.city && userData.zip) {
-    doc.text(`${userData.zip} ${userData.city}`, 20, yPos);
+  if (userData.zip && userData.city) {
+    doc.text(`${userData.zip} ${userData.city}`, col1X, yPos);
     yPos += 5;
   }
+  doc.text('Česká republika', col1X, yPos);
+  yPos += 5;
+  
   if (userData.ico) {
-    doc.text(`IČO: ${userData.ico}`, 20, yPos);
+    doc.text(`IČ: ${userData.ico}`, col1X, yPos);
     yPos += 5;
   }
   if (userData.dic) {
-    doc.text(`DIČ: ${userData.dic}`, 20, yPos);
+    doc.text(`DIČ: ${userData.dic}`, col1X, yPos);
+    yPos += 5;
+  }
+  if (userData.email) {
+    doc.text(`E-mail: ${userData.email}`, col1X, yPos);
+    yPos += 5;
+  }
+  if (userData.phone) {
+    doc.text(`Telefon: ${userData.phone}`, col1X, yPos);
+    yPos += 5;
+  }
+  if (userData.website) {
+    doc.text(`Web: ${userData.website}`, col1X, yPos);
     yPos += 5;
   }
   
-  // Client info (right side)
+  const supplierEndY = yPos;
+  
+  // ODBĚRATEL (pravý sloupec)
+  yPos = margin + 30;
   doc.setFont('helvetica', 'bold');
-  doc.text('Odběratel:', 120, 45);
+  doc.text('Odběratel:', col2X, yPos);
+  
   doc.setFont('helvetica', 'normal');
-  yPos = 50;
+  yPos += 5;
   if (invoice.client_name) {
-    doc.text(invoice.client_name, 120, yPos);
+    doc.text(invoice.client_name, col2X, yPos);
     yPos += 5;
   }
   if (invoice.client_address) {
-    doc.text(invoice.client_address, 120, yPos);
+    doc.text(invoice.client_address, col2X, yPos);
     yPos += 5;
   }
-  if (invoice.client_city && invoice.client_zip) {
-    doc.text(`${invoice.client_zip} ${invoice.client_city}`, 120, yPos);
+  if (invoice.client_zip && invoice.client_city) {
+    doc.text(`${invoice.client_zip} ${invoice.client_city}`, col2X, yPos);
     yPos += 5;
   }
+  doc.text('Česká republika', col2X, yPos);
+  yPos += 5;
+  
   if (invoice.client_ico) {
-    doc.text(`IČO: ${invoice.client_ico}`, 120, yPos);
+    doc.text(`IČ: ${invoice.client_ico}`, col2X, yPos);
     yPos += 5;
   }
   if (invoice.client_dic) {
-    doc.text(`DIČ: ${invoice.client_dic}`, 120, yPos);
+    doc.text(`DIČ: ${invoice.client_dic}`, col2X, yPos);
     yPos += 5;
   }
   
-  // Dates section
-  yPos = Math.max(yPos, 75) + 10;
-  doc.setFont('helvetica', 'bold');
-  doc.text('Datum vystavení:', 20, yPos);
-  doc.setFont('helvetica', 'normal');
-  doc.text(new Date(invoice.issue_date).toLocaleDateString('cs-CZ'), 60, yPos);
-  
-  yPos += 5;
-  doc.setFont('helvetica', 'bold');
-  doc.text('Datum splatnosti:', 20, yPos);
-  doc.setFont('helvetica', 'normal');
-  doc.text(new Date(invoice.due_date).toLocaleDateString('cs-CZ'), 60, yPos);
-  
-  if (invoice.tax_date) {
-    yPos += 5;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Datum zdanění:', 20, yPos);
-    doc.setFont('helvetica', 'normal');
-    doc.text(new Date(invoice.tax_date).toLocaleDateString('cs-CZ'), 60, yPos);
-  }
-  
-  // Items table
-  yPos += 15;
-  doc.setFont('helvetica', 'bold');
-  doc.text('Položky:', 20, yPos);
-  
-  yPos += 5;
-  // Table header
-  doc.setFillColor(240, 240, 240);
-  doc.rect(20, yPos, 170, 7, 'F');
+  // ============================================
+  // TŘI DATUMY V JEDNÉ ŘÁDCE
+  // ============================================
+  yPos = Math.max(supplierEndY, yPos) + 10;
   doc.setFontSize(9);
-  doc.text('Popis', 22, yPos + 5);
-  doc.text('Množství', 110, yPos + 5);
-  doc.text('Cena/ks', 135, yPos + 5);
-  doc.text('DPH %', 155, yPos + 5);
-  doc.text('Celkem', 175, yPos + 5);
+  doc.setFont('helvetica', 'bold');
   
-  yPos += 7;
+  const dateY = yPos;
+  doc.text('Datum vystavení:', margin, dateY);
+  doc.text('Datum zdanitelného plnění:', margin + 55, dateY);
+  doc.text('Datum splatnosti:', margin + 125, dateY);
+  
   doc.setFont('helvetica', 'normal');
+  doc.text(new Date(invoice.issue_date).toLocaleDateString('cs-CZ'), margin, dateY + 5);
+  doc.text(new Date(invoice.tax_date || invoice.issue_date).toLocaleDateString('cs-CZ'), margin + 55, dateY + 5);
+  doc.text(new Date(invoice.due_date).toLocaleDateString('cs-CZ'), margin + 125, dateY + 5);
   
-  // Table rows
-  invoice.items.forEach((item) => {
-    if (yPos > 270) {
-      doc.addPage();
-      yPos = 20;
-    }
+  // ============================================
+  // BANKOVNÍ ÚDAJE
+  // ============================================
+  yPos = dateY + 15;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Bankovní údaje:', margin, yPos);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  yPos += 5;
+  
+  if (userData.bank_account) {
+    doc.text(`Číslo účtu: ${userData.bank_account}`, margin, yPos);
+    yPos += 5;
+  }
+  if (userData.iban) {
+    doc.text(`IBAN: ${userData.iban}`, margin, yPos);
+    yPos += 5;
+  }
+  if (userData.swift) {
+    doc.text(`SWIFT: ${userData.swift}`, margin, yPos);
+    yPos += 5;
+  }
+  if (invoice.variable_symbol) {
+    doc.text(`Variabilní symbol: ${invoice.variable_symbol}`, margin, yPos);
+    yPos += 5;
+  }
+  if (invoice.constant_symbol) {
+    doc.text(`Konstantní symbol: ${invoice.constant_symbol}`, margin, yPos);
+    yPos += 5;
+  }
+  const paymentMethod = invoice.payment_method || 'Převodem';
+  doc.text(`Způsob platby: ${paymentMethod}`, margin, yPos);
+  yPos += 5;
+  
+  // ============================================
+  // VELKÝ ZVÝRAZNĚNÝ TEXT - K ÚHRADĚ
+  // ============================================
+  yPos += 5;
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  const totalAmount = (invoice.total || 0).toFixed(2).replace('.', ',');
+  const totalText = `K úhradě: ${totalAmount} ${invoice.currency || 'Kč'}`;
+  doc.text(totalText, margin, yPos);
+  
+  // ============================================
+  // TABULKA POLOŽEK (jspdf-autotable)
+  // ============================================
+  yPos += 10;
+  
+  const tableData = invoice.items.map(item => {
+    const qty = item.quantity || 0;
+    const unitPrice = (item.unit_price || 0).toFixed(2).replace('.', ',');
+    const vatRate = item.vat_rate || 21;
+    const subtotal = (item.unit_price || 0) * qty;
+    const vatAmount = subtotal * (vatRate / 100);
+    const total = subtotal + vatAmount;
     
-    const desc = doc.splitTextToSize(item.description || '', 85);
-    doc.text(desc[0] || '', 22, yPos + 5);
-    doc.text((item.quantity || 0).toString(), 112, yPos + 5, { align: 'center' });
-    doc.text(`${(item.unit_price || 0).toFixed(2)}`, 145, yPos + 5, { align: 'right' });
-    doc.text(`${item.vat_rate || 0}`, 160, yPos + 5, { align: 'center' });
-    doc.text(`${(item.total || 0).toFixed(2)}`, 188, yPos + 5, { align: 'right' });
-    
-    yPos += 7;
+    return [
+      item.description || '',
+      qty.toString(),
+      unitPrice,
+      vatRate.toString(),
+      subtotal.toFixed(2).replace('.', ','),
+      vatAmount.toFixed(2).replace('.', ','),
+      total.toFixed(2).replace('.', ',')
+    ];
   });
   
-  // Totals
-  yPos += 10;
-  doc.setFont('helvetica', 'bold');
-  doc.text('Mezisoučet bez DPH:', 120, yPos);
-  doc.text(`${(invoice.subtotal || 0).toFixed(2)} ${invoice.currency || 'CZK'}`, 188, yPos, { align: 'right' });
+  autoTable(doc, {
+    startY: yPos,
+    head: [['Označení dodávky', 'Počet m.j.', 'Cena za m.j.', 'DPH %', 'Bez DPH', 'DPH', 'Celkem']],
+    body: tableData,
+    theme: 'grid',
+    styles: {
+      font: 'helvetica',
+      fontSize: 9,
+      cellPadding: 2,
+      lineColor: [200, 200, 200],
+      lineWidth: 0.1
+    },
+    headStyles: {
+      fillColor: [240, 240, 240],
+      textColor: [0, 0, 0],
+      fontStyle: 'bold',
+      halign: 'center'
+    },
+    columnStyles: {
+      0: { cellWidth: 60, halign: 'left' },
+      1: { cellWidth: 20, halign: 'center' },
+      2: { cellWidth: 25, halign: 'right' },
+      3: { cellWidth: 15, halign: 'center' },
+      4: { cellWidth: 25, halign: 'right' },
+      5: { cellWidth: 20, halign: 'right' },
+      6: { cellWidth: 25, halign: 'right' }
+    },
+    margin: { left: margin, right: margin }
+  });
   
-  yPos += 7;
-  doc.text('DPH:', 120, yPos);
-  doc.text(`${(invoice.vat || 0).toFixed(2)} ${invoice.currency || 'CZK'}`, 188, yPos, { align: 'right' });
+  // @ts-ignore
+  yPos = doc.lastAutoTable.finalY + 5;
   
-  yPos += 7;
-  doc.setFontSize(12);
-  doc.text('Celkem k úhradě:', 120, yPos);
-  doc.text(`${(invoice.total || 0).toFixed(2)} ${invoice.currency || 'CZK'}`, 188, yPos, { align: 'right' });
-  
-  // Notes
-  if (invoice.notes) {
-    yPos += 15;
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Poznámky:', 20, yPos);
-    doc.setFont('helvetica', 'normal');
-    yPos += 5;
-    const lines = doc.splitTextToSize(invoice.notes, 170);
-    doc.text(lines, 20, yPos);
-  }
-  
-  // Footer
+  // ============================================
+  // TEXT POD TABULKOU (drobné písmo)
+  // ============================================
   doc.setFontSize(8);
-  doc.setFont('helvetica', 'italic');
-  doc.text('Děkujeme za Vaši důvěru!', 105, 285, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  const disclaimerText = 'Zboží zůstává až do úplného uhrazení majetkem dodavatele. Při zpožděné úhradě vám budeme účtovat penále 0,05 % za každý započatý den prodlení.';
+  const disclaimerLines = doc.splitTextToSize(disclaimerText, contentWidth);
+  doc.text(disclaimerLines, margin, yPos);
+  yPos += disclaimerLines.length * 3 + 5;
   
-  // Save the PDF
-  doc.save(`${invoice.number}.pdf`);
+  // ============================================
+  // SOUHRNNÁ TABULKA DPH
+  // ============================================
+  const subtotalAmount = (invoice.subtotal || 0).toFixed(2).replace('.', ',');
+  const vatAmount = (invoice.vat || 0).toFixed(2).replace('.', ',');
+  const totalAmountFormatted = (invoice.total || 0).toFixed(2).replace('.', ',');
+  
+  autoTable(doc, {
+    startY: yPos,
+    head: [['Základ', 'Výše DPH', 'Celkem']],
+    body: [[subtotalAmount, vatAmount, totalAmountFormatted]],
+    theme: 'grid',
+    styles: {
+      font: 'helvetica',
+      fontSize: 10,
+      cellPadding: 3,
+      lineColor: [200, 200, 200],
+      lineWidth: 0.1,
+      halign: 'right'
+    },
+    headStyles: {
+      fillColor: [240, 240, 240],
+      textColor: [0, 0, 0],
+      fontStyle: 'bold',
+      halign: 'center'
+    },
+    margin: { left: margin + 100, right: margin }
+  });
+  
+  // @ts-ignore
+  yPos = doc.lastAutoTable.finalY + 10;
+  
+  // ============================================
+  // RAZÍTKO A PODPIS
+  // ============================================
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Razítko a podpis:', margin, yPos);
+  yPos += 20;
+  
+  // ============================================
+  // DOLNÍ ČÁST - ZAKONČENÍ
+  // ============================================
+  const bottomY = 280; // Pozice v dolní části stránky
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Celkem k úhradě: ${totalAmountFormatted} ${invoice.currency || 'Kč'}`, margin, bottomY);
+  
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  const currentDate = new Date().toLocaleDateString('cs-CZ');
+  const userName = userData.company_name || 'Systém';
+  doc.text(`Vytiskl(a): ${userName}, ${currentDate}`, margin, bottomY + 5);
+  doc.text('Vystaveno v online fakturační službě Fakturace', margin, bottomY + 10);
+  
+  // Uložení PDF
+  doc.save(`Faktura-${invoice.number}.pdf`);
 };
