@@ -166,21 +166,29 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ============================================
   // DVA BLOKY VEDLE SEBE - Dodavatel a Odberatel s barevnymi boxy
   // ============================================
-  let yPos = margin + 45;
+  let yPos = margin + 40; // Moved 5mm up (was 45)
   const col1X = margin;
   const col2X = margin + (contentWidth / 2) + 10;
   const boxWidth = (contentWidth / 2) - 5;
   
-  // ADD LOGO above supplier section if provided - positioned MUCH HIGHER with proper aspect ratio
+  // ADD LOGO above supplier section if provided - positioned with proper aspect ratio
   if (userData.logo) {
     try {
       // Logo dimensions: Maintain aspect ratio, width limited to 40mm max, height auto-calculated
       const maxLogoWidth = 40;
       const maxLogoHeight = 15;
       
-      // Create image element to get natural dimensions
+      // Load image properly to get dimensions
       const imgElement = new Image();
       imgElement.src = userData.logo;
+      
+      // Wait for image to load to get real dimensions
+      await new Promise((resolve) => {
+        imgElement.onload = resolve;
+        // Fallback if already loaded
+        if (imgElement.complete) resolve(null);
+      });
+      
       const aspectRatio = imgElement.naturalWidth / imgElement.naturalHeight;
       
       // Calculate dimensions maintaining aspect ratio
@@ -506,8 +514,8 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ============================================
   // RAZITKO A PODPIS s rameckem - ALIGNED WITH VAT TABLE
   // ============================================
-  // Position stamp section lower (15mm down from VAT table alignment)
-  const stampYPos = vatTableEndY - 25; // Moved 15mm down (was -40, now -25)
+  // Position stamp section lower (20mm down from VAT table alignment - moved 5mm more down)
+  const stampYPos = vatTableEndY - 20; // Moved 5mm down (was -25, now -20)
   
   doc.setFontSize(10);
   safeSetFont('bold');
