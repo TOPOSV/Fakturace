@@ -140,18 +140,26 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
 
   const calculateTotal = () => {
     let subtotal = 0;
+    let vat = 0;
+    
     items.forEach((item: any) => {
       const price = parseFloat(item.unit_price) || 0;
       const qty = parseFloat(item.quantity) || 0;
+      const vatRate = parseFloat(item.vat_rate) || 21;
+      
       if (pricesIncludeVat) {
         // If prices include VAT, remove VAT to get subtotal
-        const priceWithoutVat = price / 1.21;
-        subtotal += qty * priceWithoutVat;
+        const priceWithoutVat = price / (1 + vatRate / 100);
+        const itemSubtotal = qty * priceWithoutVat;
+        subtotal += itemSubtotal;
+        vat += itemSubtotal * (vatRate / 100);
       } else {
-        subtotal += qty * price;
+        const itemSubtotal = qty * price;
+        subtotal += itemSubtotal;
+        vat += itemSubtotal * (vatRate / 100);
       }
     });
-    const vat = subtotal * 0.21;
+    
     return { subtotal, vat, total: subtotal + vat };
   };
 
@@ -442,6 +450,19 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
                       step="0.01"
                       required
                     />
+                  </div>
+                  <div className="form-group" style={{ flex: '0 0 90px' }}>
+                    <label style={{ fontSize: '12px', marginBottom: '3px', display: 'block', color: '#666' }}>DPH %</label>
+                    <select
+                      value={item.vat_rate}
+                      onChange={(e) => handleItemChange(index, 'vat_rate', e.target.value)}
+                      required
+                      style={{ padding: '10px' }}
+                    >
+                      <option value="21">21%</option>
+                      <option value="12">12%</option>
+                      <option value="0">0%</option>
+                    </select>
                   </div>
                   <button
                     type="button"
