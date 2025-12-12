@@ -81,7 +81,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     }
   };
   
-  // Color palette for professional look
+  // Color palette for professional look - Modern, vibrant colors
   const colors: {
     primary: [number, number, number];
     primaryLight: [number, number, number];
@@ -92,18 +92,42 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     success: [number, number, number];
     text: [number, number, number];
   } = {
-    primary: [41, 98, 255],      // Blue #2962FF
-    primaryLight: [63, 81, 181],  // Indigo #3F51B5
-    accent: [0, 150, 136],        // Teal #009688
-    dark: [33, 33, 33],           // Dark Gray #212121
-    lightGray: [245, 245, 245],   // Light Gray #F5F5F5
-    mediumGray: [189, 189, 189],  // Medium Gray #BDBDBD
-    success: [76, 175, 80],       // Green #4CAF50
-    text: [66, 66, 66]            // Text Gray #424242
+    primary: [30, 136, 229],      // Professional Blue #1E88E5
+    primaryLight: [66, 165, 245],  // Light Blue #42A5F5
+    accent: [255, 152, 0],        // Vibrant Orange #FF9800
+    dark: [38, 50, 56],           // Dark Blue-Gray #263238
+    lightGray: [250, 250, 250],   // Very Light Gray #FAFAFA
+    mediumGray: [176, 190, 197],  // Blue-Gray #B0BEC5
+    success: [67, 160, 71],       // Professional Green #43A047
+    text: [55, 71, 79]            // Dark Blue-Gray #37474F
   };
   
   // Set the loaded font (Roboto or Helvetica fallback) - must specify style!
   safeSetFont('normal');
+  
+  // ============================================
+  // CALCULATE TOTALS FROM ITEMS (for accurate display throughout PDF)
+  // ============================================
+  let calculatedSubtotal = 0;
+  let calculatedVat = 0;
+  let calculatedTotal = 0;
+  
+  invoice.items.forEach(item => {
+    const qty = item.quantity || 0;
+    const unitPrice = item.unit_price || 0;
+    const vatRate = item.vat_rate || 21;
+    const subtotal = unitPrice * qty;
+    const vatAmount = subtotal * (vatRate / 100);
+    
+    calculatedSubtotal += subtotal;
+    calculatedVat += vatAmount;
+    calculatedTotal += subtotal + vatAmount;
+  });
+  
+  // Use calculated values if available, otherwise fall back to invoice values
+  const finalSubtotal = calculatedSubtotal > 0 ? calculatedSubtotal : (invoice.subtotal || 0);
+  const finalVat = calculatedVat > 0 ? calculatedVat : (invoice.vat || 0);
+  const finalTotal = calculatedTotal > 0 ? calculatedTotal : (invoice.total || 0);
   
   // ============================================
   // HLAVNÍ NADPIS - Faktura - daňový doklad s barevným pozadím
@@ -326,8 +350,8 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.setFontSize(16);
   safeSetFont('bold');
   doc.setTextColor(255, 255, 255);
-  const totalAmount = (invoice.total || 0).toFixed(2).replace('.', ',');
-  const totalText = `K úhradě: ${totalAmount} ${invoice.currency || 'Kč'}`;
+  const totalAmount = finalTotal.toFixed(2).replace('.', ',');
+  const totalText = `K úhradě: ${totalAmount} Kč`;
   doc.text(totalText, margin + 3, yPos + 8);
   
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
@@ -339,20 +363,20 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   
   const tableData = invoice.items.map(item => {
     const qty = item.quantity || 0;
-    const unitPrice = (item.unit_price || 0).toFixed(2).replace('.', ',');
+    const unitPrice = item.unit_price || 0;
     const vatRate = item.vat_rate || 21;
-    const subtotal = (item.unit_price || 0) * qty;
+    const subtotal = unitPrice * qty;
     const vatAmount = subtotal * (vatRate / 100);
     const total = subtotal + vatAmount;
     
     return [
       item.description || '',
       qty.toString(),
-      unitPrice,
-      vatRate.toString(),
-      subtotal.toFixed(2).replace('.', ','),
-      vatAmount.toFixed(2).replace('.', ','),
-      total.toFixed(2).replace('.', ',')
+      unitPrice.toFixed(2).replace('.', ',') + ' Kč',
+      vatRate.toString() + ' %',
+      subtotal.toFixed(2).replace('.', ',') + ' Kč',
+      vatAmount.toFixed(2).replace('.', ',') + ' Kč',
+      total.toFixed(2).replace('.', ',') + ' Kč'
     ];
   });
   
@@ -409,11 +433,11 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   
   // ============================================
-  // SOUHRNNA TABULKA DPH s barvami
+  // SOUHRNNA TABULKA DPH s barvami - Using precalculated values
   // ============================================
-  const subtotalAmount = (invoice.subtotal || 0).toFixed(2).replace('.', ',');
-  const vatAmount = (invoice.vat || 0).toFixed(2).replace('.', ',');
-  const totalAmountFormatted = (invoice.total || 0).toFixed(2).replace('.', ',');
+  const subtotalAmount = finalSubtotal.toFixed(2).replace('.', ',') + ' Kč';
+  const vatAmount = finalVat.toFixed(2).replace('.', ',') + ' Kč';
+  const totalAmountFormatted = finalTotal.toFixed(2).replace('.', ',') + ' Kč';
   
   autoTable(doc, {
     startY: yPos,
@@ -471,7 +495,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.setFontSize(14);
   safeSetFont('bold');
   doc.setTextColor(255, 255, 255);
-  doc.text(`Celkem k úhradě: ${totalAmountFormatted} ${invoice.currency || 'Kč'}`, margin + 3, bottomY + 2);
+  doc.text(`Celkem k úhradě: ${totalAmountFormatted}`, margin + 3, bottomY + 2);
   
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   doc.setFontSize(8);
