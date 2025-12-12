@@ -62,7 +62,16 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   const contentWidth = pageWidth - (2 * margin);
   
   // Color palette for professional look
-  const colors = {
+  const colors: {
+    primary: [number, number, number];
+    primaryLight: [number, number, number];
+    accent: [number, number, number];
+    dark: [number, number, number];
+    lightGray: [number, number, number];
+    mediumGray: [number, number, number];
+    success: [number, number, number];
+    text: [number, number, number];
+  } = {
     primary: [41, 98, 255],      // Blue #2962FF
     primaryLight: [63, 81, 181],  // Indigo #3F51B5
     accent: [0, 150, 136],        // Teal #009688
