@@ -195,7 +195,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.setFont(fontName, 'bold');
   doc.setFontSize(11);
   doc.setTextColor(colors.accent[0], colors.accent[1], colors.accent[2]);
-  doc.text('Odberatel:', col2X + 3, yPos);
+  doc.text('Odběratel:', col2X + 3, yPos);
   
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   doc.setFont(fontName, 'normal');
@@ -242,8 +242,8 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.setFont(fontName, 'bold');
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   
-  doc.text('Datum vystaveni:', margin + 2, yPos + 4);
-  doc.text('Datum zdan. plneni:', margin + 60, yPos + 4);
+  doc.text('Datum vystavení:', margin + 2, yPos + 4);
+  doc.text('Datum zdanitelného plnění:', margin + 60, yPos + 4);
   doc.text('Datum splatnosti:', margin + 118, yPos + 4);
   
   doc.setFont(fontName, 'normal');
@@ -264,7 +264,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.setFontSize(10);
   doc.setFont(fontName, 'bold');
   doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-  doc.text('Bankovni udaje:', margin + 3, yPos + 5);
+  doc.text('Bankovní údaje:', margin + 3, yPos + 5);
   
   doc.setFont(fontName, 'normal');
   doc.setFontSize(9);
@@ -287,15 +287,15 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // Right side
   let rightYPos = yPos;
   if (invoice.variable_symbol) {
-    doc.text(`Variabilni symbol: ${invoice.variable_symbol}`, margin + 95, rightYPos);
+    doc.text(`Variabilní symbol: ${invoice.variable_symbol}`, margin + 95, rightYPos);
     rightYPos += 4;
   }
   if (invoice.constant_symbol) {
-    doc.text(`Konstantni symbol: ${invoice.constant_symbol}`, margin + 95, rightYPos);
+    doc.text(`Konstantní symbol: ${invoice.constant_symbol}`, margin + 95, rightYPos);
     rightYPos += 4;
   }
-  const paymentMethod = invoice.payment_method || 'Prevodem';
-  doc.text(`Zpusob platby: ${paymentMethod}`, margin + 95, rightYPos);
+  const paymentMethod = invoice.payment_method || 'Převodem';
+  doc.text(`Způsob platby: ${paymentMethod}`, margin + 95, rightYPos);
   
   yPos = Math.max(bankYPos, rightYPos) + 5;
   
@@ -347,7 +347,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     body: tableData,
     theme: 'grid',
     styles: {
-      font: 'helvetica',
+      font: fontName,
       fontSize: 9,
       cellPadding: 3,
       lineColor: colors.mediumGray,
@@ -406,7 +406,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     body: [[subtotalAmount, vatAmount, totalAmountFormatted]],
     theme: 'grid',
     styles: {
-      font: 'helvetica',
+      font: fontName,
       fontSize: 10,
       cellPadding: 3,
       lineColor: colors.mediumGray,
@@ -462,12 +462,12 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.setFontSize(8);
   doc.setFont(fontName, 'normal');
   const currentDate = new Date().toLocaleDateString('cs-CZ');
-  const userName = userData.company_name || 'System';
+  const userName = userData.company_name || 'Systém';
   doc.text(`Vytiskl(a): ${userName}, ${currentDate}`, margin, bottomY + 8);
   
   doc.setTextColor(colors.primaryLight[0], colors.primaryLight[1], colors.primaryLight[2]);
   doc.setFont(fontName, 'italic');
-  doc.text('Vystaveno v online fakturacni sluzbe Fakturace', margin, bottomY + 12);
+  doc.text('Vystaveno v online fakturační službě Fakturace', margin, bottomY + 12);
   
   // Ulozeni PDF
   doc.save(`Faktura-${invoice.number}.pdf`);
