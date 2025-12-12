@@ -81,7 +81,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ============================================
   
   // Colored header banner
-  doc.setFillColor(...colors.primary);
+  doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
   doc.rect(0, 0, pageWidth, 25, 'F');
   
   // Main title in white
@@ -95,10 +95,10 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.text(typeText, margin, 15);
   
   // Reset text color to dark
-  doc.setTextColor(...colors.dark);
+  doc.setTextColor(colors.dark[0], colors.dark[1], colors.dark[2]);
   
   // Invoice number in colored box
-  doc.setFillColor(...colors.accent);
+  doc.setFillColor(colors.accent[0], colors.accent[1], colors.accent[2]);
   doc.rect(pageWidth - margin - 55, margin, 55, 12, 'F');
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
@@ -106,7 +106,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.text(`Cislo: ${invoice.number}`, pageWidth - margin - 52, margin + 8);
   
   // Reset text color
-  doc.setTextColor(...colors.text);
+  doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   
   // ============================================
   // DVA BLOKY VEDLE SEBE - Dodavatel a Odběratel s barevnými boxy
@@ -117,15 +117,15 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   const boxWidth = (contentWidth / 2) - 5;
   
   // DODAVATEL (levý sloupec) - Light blue box
-  doc.setFillColor(...colors.lightGray);
+  doc.setFillColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
   doc.roundedRect(col1X, yPos - 5, boxWidth, 55, 2, 2, 'F');
   
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...colors.primary);
+  doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
   doc.text('Dodavatel:', col1X + 3, yPos);
   
-  doc.setTextColor(...colors.text);
+  doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   yPos += 6;
@@ -156,9 +156,9 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     yPos += 4;
   }
   if (userData.email) {
-    doc.setTextColor(...colors.primaryLight);
+    doc.setTextColor(colors.primaryLight[0], colors.primaryLight[1], colors.primaryLight[2]);
     doc.text(`E-mail: ${userData.email}`, col1X + 3, yPos);
-    doc.setTextColor(...colors.text);
+    doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
     yPos += 4;
   }
   if (userData.phone) {
@@ -166,24 +166,24 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     yPos += 4;
   }
   if (userData.website) {
-    doc.setTextColor(...colors.primaryLight);
+    doc.setTextColor(colors.primaryLight[0], colors.primaryLight[1], colors.primaryLight[2]);
     doc.text(`Web: ${userData.website}`, col1X + 3, yPos);
-    doc.setTextColor(...colors.text);
+    doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   }
   
   const supplierEndY = yPos;
   
   // ODBĚRATEL (pravý sloupec) - Light teal box
   yPos = margin + 45;
-  doc.setFillColor(...colors.lightGray);
+  doc.setFillColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
   doc.roundedRect(col2X, yPos - 5, boxWidth, 55, 2, 2, 'F');
   
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  doc.setTextColor(...colors.accent);
+  doc.setTextColor(colors.accent[0], colors.accent[1], colors.accent[2]);
   doc.text('Odberatel:', col2X + 3, yPos);
   
-  doc.setTextColor(...colors.text);
+  doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   yPos += 6;
@@ -219,14 +219,14 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   yPos = Math.max(supplierEndY, yPos) + 12;
   
   // Date boxes with light background
-  doc.setFillColor(...colors.lightGray);
+  doc.setFillColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
   doc.roundedRect(margin, yPos, 55, 12, 1, 1, 'F');
   doc.roundedRect(margin + 58, yPos, 55, 12, 1, 1, 'F');
   doc.roundedRect(margin + 116, yPos, 55, 12, 1, 1, 'F');
   
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...colors.text);
+  doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   
   doc.text('Datum vystaveni:', margin + 2, yPos + 4);
   doc.text('Datum zdan. plneni:', margin + 60, yPos + 4);
@@ -244,17 +244,17 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   yPos += 18;
   
   // Banking info box with light background
-  doc.setFillColor(...colors.lightGray);
+  doc.setFillColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
   doc.roundedRect(margin, yPos, contentWidth, 32, 2, 2, 'F');
   
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...colors.primary);
+  doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
   doc.text('Bankovni udaje:', margin + 3, yPos + 5);
   
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.setTextColor(...colors.text);
+  doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   yPos += 10;
   
   let bankYPos = yPos;
@@ -291,7 +291,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   yPos += 5;
   
   // Prominent total amount box
-  doc.setFillColor(...colors.success);
+  doc.setFillColor(colors.success[0], colors.success[1], colors.success[2]);
   doc.roundedRect(margin, yPos, contentWidth, 12, 2, 2, 'F');
   
   doc.setFontSize(16);
@@ -301,7 +301,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   const totalText = `K uhrade: ${totalAmount} ${invoice.currency || 'Kc'}`;
   doc.text(totalText, margin + 3, yPos + 8);
   
-  doc.setTextColor(...colors.text);
+  doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   
   // ============================================
   // TABULKA POLOŽEK (jspdf-autotable) s lepšími barvami
@@ -370,14 +370,14 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ============================================
   doc.setFontSize(8);
   doc.setFont('helvetica', 'italic');
-  doc.setTextColor(...colors.mediumGray);
+  doc.setTextColor(colors.mediumGray[0], colors.mediumGray[1], colors.mediumGray[2]);
   const disclaimerText = 'Zbozi zustava az do uplneho uhrazeni majetkem dodavatele. Pri pozpdene uhrade vam budeme uctovat penale 0,05 % za kazdy zapocaty den prodleni.';
   const disclaimerLines = doc.splitTextToSize(disclaimerText, contentWidth);
   doc.text(disclaimerLines, margin, yPos);
   yPos += disclaimerLines.length * 3 + 5;
   
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...colors.text);
+  doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   
   // ============================================
   // SOUHRNNÁ TABULKA DPH s barvami
@@ -421,7 +421,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ============================================
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...colors.text);
+  doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   doc.text('Razitko a podpis:', margin, yPos);
   
   // Signature box
@@ -436,7 +436,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   const bottomY = 270; // Pozice v dolní části stránky
   
   // Final total box
-  doc.setFillColor(...colors.primary);
+  doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
   doc.roundedRect(margin, bottomY - 5, contentWidth, 10, 2, 2, 'F');
   
   doc.setFontSize(14);
@@ -444,14 +444,14 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.setTextColor(255, 255, 255);
   doc.text(`Celkem k uhrade: ${totalAmountFormatted} ${invoice.currency || 'Kc'}`, margin + 3, bottomY + 2);
   
-  doc.setTextColor(...colors.text);
+  doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   const currentDate = new Date().toLocaleDateString('cs-CZ');
   const userName = userData.company_name || 'System';
   doc.text(`Vytiskl(a): ${userName}, ${currentDate}`, margin, bottomY + 8);
   
-  doc.setTextColor(...colors.primaryLight);
+  doc.setTextColor(colors.primaryLight[0], colors.primaryLight[1], colors.primaryLight[2]);
   doc.setFont('helvetica', 'italic');
   doc.text('Vystaveno v online fakturacni sluzbe Fakturace', margin, bottomY + 12);
   
