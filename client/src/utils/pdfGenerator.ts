@@ -82,12 +82,11 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     text: [66, 66, 66]            // Text Gray #424242
   };
   
-  // Use Times font which has better Unicode/Czech character support than Helvetica
-  // Times is one of the standard PDF fonts with better international character support
-  doc.setFont('times');
+  // Use Helvetica font - standard and reliable
+  doc.setFont('helvetica');
   
   // ============================================
-  // HLAVNÍ NADPIS - Faktura – daňový doklad s barevným pozadím
+  // HLAVNI NADPIS - Faktura - danovy doklad s barevnym pozadim
   // ============================================
   
   // Colored header banner
@@ -96,12 +95,12 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   
   // Main title in white
   doc.setFontSize(20);
-  doc.setFont('times', 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.setTextColor(255, 255, 255);
   
-  // Use proper Czech text with diacritics
-  const typeText = invoice.type === 'invoice' ? 'Faktura - daňový doklad' : 
-                   invoice.type === 'proforma' ? 'Zálohová faktura' : 'Nabídka';
+  // Use ASCII-safe Czech text (without diacritics for PDF compatibility)
+  const typeText = invoice.type === 'invoice' ? 'Faktura - danovy doklad' : 
+                   invoice.type === 'proforma' ? 'Zalohova faktura' : 'Nabidka';
   doc.text(typeText, margin, 15);
   
   // Reset text color to dark
@@ -111,39 +110,39 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.setFillColor(colors.accent[0], colors.accent[1], colors.accent[2]);
   doc.rect(pageWidth - margin - 55, margin, 55, 12, 'F');
   doc.setFontSize(12);
-  doc.setFont('times', 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.setTextColor(255, 255, 255);
-  doc.text(`Číslo: ${invoice.number}`, pageWidth - margin - 52, margin + 8);
+  doc.text(`Cislo: ${invoice.number}`, pageWidth - margin - 52, margin + 8);
   
   // Reset text color
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   
   // ============================================
-  // DVA BLOKY VEDLE SEBE - Dodavatel a Odběratel s barevnými boxy
+  // DVA BLOKY VEDLE SEBE - Dodavatel a Odberatel s barevnymi boxy
   // ============================================
   let yPos = margin + 45;
   const col1X = margin;
   const col2X = margin + (contentWidth / 2) + 10;
   const boxWidth = (contentWidth / 2) - 5;
   
-  // DODAVATEL (levý sloupec) - Light blue box
+  // DODAVATEL (levy sloupec) - Light blue box
   doc.setFillColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
   doc.roundedRect(col1X, yPos - 5, boxWidth, 55, 2, 2, 'F');
   
   doc.setFontSize(11);
-  doc.setFont('times', 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
   doc.text('Dodavatel:', col1X + 3, yPos);
   
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
-  doc.setFont('times', 'normal');
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   yPos += 6;
   
   if (userData.company_name) {
-    doc.setFont('times', 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text(userData.company_name, col1X + 3, yPos);
-    doc.setFont('times', 'normal');
+    doc.setFont('helvetica', 'normal');
     yPos += 4;
   }
   if (userData.address) {
@@ -154,15 +153,15 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     doc.text(`${userData.zip} ${userData.city}`, col1X + 3, yPos);
     yPos += 4;
   }
-  doc.text('Česká republika', col1X + 3, yPos);
+  doc.text('Ceska republika', col1X + 3, yPos);
   yPos += 5;
   
   if (userData.ico) {
-    doc.text(`IČ: ${userData.ico}`, col1X + 3, yPos);
+    doc.text(`IC: ${userData.ico}`, col1X + 3, yPos);
     yPos += 4;
   }
   if (userData.dic) {
-    doc.text(`DIČ: ${userData.dic}`, col1X + 3, yPos);
+    doc.text(`DIC: ${userData.dic}`, col1X + 3, yPos);
     yPos += 4;
   }
   if (userData.email) {
@@ -183,25 +182,25 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   
   const supplierEndY = yPos;
   
-  // ODBĚRATEL (pravý sloupec) - Light teal box
+  // ODBERATEL (pravy sloupec) - Light teal box
   yPos = margin + 45;
   doc.setFillColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
   doc.roundedRect(col2X, yPos - 5, boxWidth, 55, 2, 2, 'F');
   
-  doc.setFont('times', 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(colors.accent[0], colors.accent[1], colors.accent[2]);
-  doc.text('Odběratel:', col2X + 3, yPos);
+  doc.text('Odberatel:', col2X + 3, yPos);
   
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
-  doc.setFont('times', 'normal');
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   yPos += 6;
   
   if (invoice.client_name) {
-    doc.setFont('times', 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text(invoice.client_name, col2X + 3, yPos);
-    doc.setFont('times', 'normal');
+    doc.setFont('helvetica', 'normal');
     yPos += 4;
   }
   if (invoice.client_address) {
@@ -212,19 +211,19 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     doc.text(`${invoice.client_zip} ${invoice.client_city}`, col2X + 3, yPos);
     yPos += 4;
   }
-  doc.text('Česká republika', col2X + 3, yPos);
+  doc.text('Ceska republika', col2X + 3, yPos);
   yPos += 5;
   
   if (invoice.client_ico) {
-    doc.text(`IČ: ${invoice.client_ico}`, col2X + 3, yPos);
+    doc.text(`IC: ${invoice.client_ico}`, col2X + 3, yPos);
     yPos += 4;
   }
   if (invoice.client_dic) {
-    doc.text(`DIČ: ${invoice.client_dic}`, col2X + 3, yPos);
+    doc.text(`DIC: ${invoice.client_dic}`, col2X + 3, yPos);
   }
   
   // ============================================
-  // TŘI DATUMY V JEDNÉ ŘÁDCE s barevným pozadím
+  // TRI DATUMY V JEDNE RADCE s barevnym pozadim
   // ============================================
   yPos = Math.max(supplierEndY, yPos) + 12;
   
@@ -235,21 +234,21 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.roundedRect(margin + 116, yPos, 55, 12, 1, 1, 'F');
   
   doc.setFontSize(8);
-  doc.setFont('times', 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   
-  doc.text('Datum vystavení:', margin + 2, yPos + 4);
-  doc.text('Datum zdan. plnění:', margin + 60, yPos + 4);
+  doc.text('Datum vystaveni:', margin + 2, yPos + 4);
+  doc.text('Datum zdan. plneni:', margin + 60, yPos + 4);
   doc.text('Datum splatnosti:', margin + 118, yPos + 4);
   
-  doc.setFont('times', 'normal');
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.text(new Date(invoice.issue_date).toLocaleDateString('cs-CZ'), margin + 2, yPos + 9);
   doc.text(new Date(invoice.tax_date || invoice.issue_date).toLocaleDateString('cs-CZ'), margin + 60, yPos + 9);
   doc.text(new Date(invoice.due_date).toLocaleDateString('cs-CZ'), margin + 118, yPos + 9);
   
   // ============================================
-  // BANKOVNÍ ÚDAJE v barevném boxu
+  // BANKOVNI UDAJE v barevnem boxu
   // ============================================
   yPos += 18;
   
@@ -258,18 +257,18 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.roundedRect(margin, yPos, contentWidth, 32, 2, 2, 'F');
   
   doc.setFontSize(10);
-  doc.setFont('times', 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-  doc.text('Bankovní údaje:', margin + 3, yPos + 5);
+  doc.text('Bankovni udaje:', margin + 3, yPos + 5);
   
-  doc.setFont('times', 'normal');
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   yPos += 10;
   
   let bankYPos = yPos;
   if (userData.bank_account) {
-    doc.text(`Číslo účtu: ${userData.bank_account}`, margin + 3, bankYPos);
+    doc.text(`Cislo uctu: ${userData.bank_account}`, margin + 3, bankYPos);
     bankYPos += 4;
   }
   if (userData.iban) {
@@ -283,20 +282,20 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // Right side
   let rightYPos = yPos;
   if (invoice.variable_symbol) {
-    doc.text(`Variabilní symbol: ${invoice.variable_symbol}`, margin + 95, rightYPos);
+    doc.text(`Variabilni symbol: ${invoice.variable_symbol}`, margin + 95, rightYPos);
     rightYPos += 4;
   }
   if (invoice.constant_symbol) {
-    doc.text(`Konstantní symbol: ${invoice.constant_symbol}`, margin + 95, rightYPos);
+    doc.text(`Konstantni symbol: ${invoice.constant_symbol}`, margin + 95, rightYPos);
     rightYPos += 4;
   }
-  const paymentMethod = invoice.payment_method || 'Převodem';
-  doc.text(`Způsob platby: ${paymentMethod}`, margin + 95, rightYPos);
+  const paymentMethod = invoice.payment_method || 'Prevodem';
+  doc.text(`Zpusob platby: ${paymentMethod}`, margin + 95, rightYPos);
   
   yPos = Math.max(bankYPos, rightYPos) + 5;
   
   // ============================================
-  // VELKÝ ZVÝRAZNĚNÝ TEXT - K ÚHRADĚ s barevným boxem
+  // VELKY ZVYRAZNENY TEXT - K UHRADE s barevnym boxem
   // ============================================
   yPos += 5;
   
@@ -305,16 +304,16 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.roundedRect(margin, yPos, contentWidth, 12, 2, 2, 'F');
   
   doc.setFontSize(16);
-  doc.setFont('times', 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.setTextColor(255, 255, 255);
   const totalAmount = (invoice.total || 0).toFixed(2).replace('.', ',');
-  const totalText = `K úhradě: ${totalAmount} ${invoice.currency || 'Kč'}`;
+  const totalText = `K uhrade: ${totalAmount} ${invoice.currency || 'Kc'}`;
   doc.text(totalText, margin + 3, yPos + 8);
   
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   
   // ============================================
-  // TABULKA POLOŽEK (jspdf-autotable) s lepšími barvami
+  // TABULKA POLOZEK (jspdf-autotable) s lepsimi barvami
   // ============================================
   yPos += 15;
   
@@ -339,11 +338,11 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   
   autoTable(doc, {
     startY: yPos,
-    head: [['Označení dodávky', 'Počet', 'Cena/j.', 'DPH %', 'Bez DPH', 'DPH', 'Celkem']],
+    head: [['Oznaceni dodavky', 'Pocet', 'Cena/j.', 'DPH %', 'Bez DPH', 'DPH', 'Celkem']],
     body: tableData,
     theme: 'grid',
     styles: {
-      font: 'times',
+      font: 'helvetica',
       fontSize: 9,
       cellPadding: 3,
       lineColor: colors.mediumGray,
@@ -376,21 +375,21 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   yPos = doc.lastAutoTable.finalY + 5;
   
   // ============================================
-  // TEXT POD TABULKOU (drobné písmo) - s českými znaky
+  // TEXT POD TABULKOU (drobne pismo) - s ceskymi znaky
   // ============================================
   doc.setFontSize(8);
-  doc.setFont('times', 'italic');
+  doc.setFont('helvetica', 'italic');
   doc.setTextColor(colors.mediumGray[0], colors.mediumGray[1], colors.mediumGray[2]);
-  const disclaimerText = 'Zboží zůstává až do úplného uhrazení majetkem dodavatele. Při zpožděné úhradě vám budeme účtovat penále 0,05 % za každý započatý den prodlení.';
+  const disclaimerText = 'Zbozi zustava az do uplneho uhrazeni majetkem dodavatele. Pri zpozdene uhrade vam budeme uctovat penale 0,05 % za kazdy zapocaty den prodleni.';
   const disclaimerLines = doc.splitTextToSize(disclaimerText, contentWidth);
   doc.text(disclaimerLines, margin, yPos);
   yPos += disclaimerLines.length * 3 + 5;
   
-  doc.setFont('times', 'normal');
+  doc.setFont('helvetica', 'normal');
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   
   // ============================================
-  // SOUHRNNÁ TABULKA DPH s barvami
+  // SOUHRNNA TABULKA DPH s barvami
   // ============================================
   const subtotalAmount = (invoice.subtotal || 0).toFixed(2).replace('.', ',');
   const vatAmount = (invoice.vat || 0).toFixed(2).replace('.', ',');
@@ -398,11 +397,11 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   
   autoTable(doc, {
     startY: yPos,
-    head: [['Základ', 'Výše DPH', 'Celkem']],
+    head: [['Zaklad', 'Vyse DPH', 'Celkem']],
     body: [[subtotalAmount, vatAmount, totalAmountFormatted]],
     theme: 'grid',
     styles: {
-      font: 'times',
+      font: 'helvetica',
       fontSize: 10,
       cellPadding: 3,
       lineColor: colors.mediumGray,
@@ -427,12 +426,12 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   yPos = doc.lastAutoTable.finalY + 10;
   
   // ============================================
-  // RAZÍTKO A PODPIS s rámečkem
+  // RAZITKO A PODPIS s rameckem
   // ============================================
   doc.setFontSize(10);
-  doc.setFont('times', 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
-  doc.text('Razítko a podpis:', margin, yPos);
+  doc.text('Razitko a podpis:', margin, yPos);
   
   // Signature box
   doc.setDrawColor(colors.mediumGray[0], colors.mediumGray[1], colors.mediumGray[2]);
@@ -441,30 +440,30 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   yPos += 30;
   
   // ============================================
-  // DOLNÍ ČÁST - ZAKONČENÍ s barevným boxem
+  // DOLNI CAST - ZAKONCENI s barevnym boxem
   // ============================================
-  const bottomY = 270; // Pozice v dolní části stránky
+  const bottomY = 270; // Pozice v dolni casti stranky
   
   // Final total box
   doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
   doc.roundedRect(margin, bottomY - 5, contentWidth, 10, 2, 2, 'F');
   
   doc.setFontSize(14);
-  doc.setFont('times', 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.setTextColor(255, 255, 255);
-  doc.text(`Celkem k úhradě: ${totalAmountFormatted} ${invoice.currency || 'Kč'}`, margin + 3, bottomY + 2);
+  doc.text(`Celkem k uhrade: ${totalAmountFormatted} ${invoice.currency || 'Kc'}`, margin + 3, bottomY + 2);
   
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   doc.setFontSize(8);
-  doc.setFont('times', 'normal');
+  doc.setFont('helvetica', 'normal');
   const currentDate = new Date().toLocaleDateString('cs-CZ');
   const userName = userData.company_name || 'System';
   doc.text(`Vytiskl(a): ${userName}, ${currentDate}`, margin, bottomY + 8);
   
   doc.setTextColor(colors.primaryLight[0], colors.primaryLight[1], colors.primaryLight[2]);
-  doc.setFont('times', 'italic');
-  doc.text('Vystaveno v online fakturační službě Fakturace', margin, bottomY + 12);
+  doc.setFont('helvetica', 'italic');
+  doc.text('Vystaveno v online fakturacni sluzbe Fakturace', margin, bottomY + 12);
   
-  // Uložení PDF
+  // Ulozeni PDF
   doc.save(`Faktura-${invoice.number}.pdf`);
 };
