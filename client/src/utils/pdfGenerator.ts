@@ -171,13 +171,17 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   const col2X = margin + (contentWidth / 2) + 10;
   const boxWidth = (contentWidth / 2) - 5;
   
-  // ADD LOGO above supplier section if provided
+  // ADD LOGO above supplier section if provided - positioned HIGHER with proper dimensions
   if (userData.logo) {
     try {
-      const logoWidth = 30;
-      const logoHeight = 15;
-      doc.addImage(userData.logo, 'PNG', col1X, yPos - 5, logoWidth, logoHeight);
-      yPos += 12; // Add space after logo
+      // Logo dimensions: 40x20mm for better visibility and proportion
+      const logoWidth = 40;
+      const logoHeight = 20;
+      // Position logo well above supplier box (15mm above current yPos)
+      const logoY = yPos - 20;
+      doc.addImage(userData.logo, 'PNG', col1X, logoY, logoWidth, logoHeight);
+      // Add space after logo so supplier box doesn't overlap
+      yPos += 5;
     } catch (error) {
       console.warn('Failed to add logo to PDF:', error);
     }
@@ -491,25 +495,27 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   doc.text('Razítko a podpis:', margin, yPos);
   
-  // Signature box
+  // Signature box - taller for better visibility
   doc.setDrawColor(colors.mediumGray[0], colors.mediumGray[1], colors.mediumGray[2]);
   doc.setLineWidth(0.3);
-  doc.rect(margin, yPos + 2, 80, 25);
+  doc.rect(margin, yPos + 2, 80, 30);
   
-  // ADD STAMP inside the signature box if provided
+  // ADD STAMP inside the signature box if provided - positioned HIGHER for visibility
   if (userData.stamp) {
     try {
-      const stampWidth = 25;
-      const stampHeight = 20;
+      // Stamp dimensions: 30x25mm for better visibility
+      const stampWidth = 30;
+      const stampHeight = 25;
       const stampX = margin + 5;
-      const stampY = yPos + 5;
+      // Position stamp just 3mm from top of box (instead of 5mm) for better visibility
+      const stampY = yPos + 4;
       doc.addImage(userData.stamp, 'PNG', stampX, stampY, stampWidth, stampHeight);
     } catch (error) {
       console.warn('Failed to add stamp to PDF:', error);
     }
   }
   
-  yPos += 30;
+  yPos += 35;
   
   // ============================================
   // DOLNI CAST - ZAKONCENI s barevnym boxem
