@@ -84,6 +84,15 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     }
   };
   
+  // Format number with thousands separator (space) for Czech format
+  // Example: 1234567.89 => "1 234 567,89"
+  const formatCzechNumber = (num: number): string => {
+    const [intPart, decPart] = num.toFixed(2).split('.');
+    // Add space as thousands separator
+    const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `${formattedInt},${decPart}`;
+  };
+  
   // Color palette for professional look - Dark Red & Light Red theme
   const colors: {
     primary: [number, number, number];
@@ -405,11 +414,11 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     return [
       item.description || '',
       qty.toString(),
-      unitPrice.toFixed(2).replace('.', ','), // Removed "Kč"
+      formatCzechNumber(unitPrice), // Czech format with space separator
       `${vatRate} %`,
-      subtotal.toFixed(2).replace('.', ','), // Removed "Kč"
-      vatAmount.toFixed(2).replace('.', ','), // Removed "Kč"
-      total.toFixed(2).replace('.', ',') // Removed "Kč"
+      formatCzechNumber(subtotal), // Czech format with space separator
+      formatCzechNumber(vatAmount), // Czech format with space separator
+      formatCzechNumber(total) // Czech format with space separator
     ];
   });
   
@@ -468,9 +477,9 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ============================================
   // SOUHRNNA TABULKA DPH s barvami - Using precalculated values
   // ============================================
-  const subtotalAmount = `${finalSubtotal.toFixed(2).replace('.', ',')} Kč`;
-  const vatAmount = `${finalVat.toFixed(2).replace('.', ',')} Kč`;
-  const totalAmountFormatted = `${finalTotal.toFixed(2).replace('.', ',')} Kč`;
+  const subtotalAmount = `${formatCzechNumber(finalSubtotal)} Kč`;
+  const vatAmount = `${formatCzechNumber(finalVat)} Kč`;
+  const totalAmountFormatted = `${formatCzechNumber(finalTotal)} Kč`;
   
   autoTable(doc, {
     startY: yPos,
@@ -598,9 +607,29 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     // SPAYD format uses single line with asterisk separators (not newlines)
     const qrParts = ['SPD*1.0'];
     
-    // Add account if available
+    // Add account if available - format properly for SPAYD
     if (userData.iban || userData.bank_account) {
-      qrParts.push(`ACC:${userData.iban || userData.bank_account}`);
+      let accountNumber = '';
+      
+      if (userData.iban) {
+        // IBAN format: CZ65 0800 0000 1920 0014 5399 -> CZ6508000000192000145399 (no spaces)
+        accountNumber = userData.iban.replace(/\s/g, '');
+      } else if (userData.bank_account) {
+        // Czech format can be: 123456789/0100 or 19-123456789/0100 or plain IBAN
+        const account = userData.bank_account.trim();
+        
+        // Check if it's already IBAN-like (starts with CZ)
+        if (account.startsWith('CZ')) {
+          accountNumber = account.replace(/\s/g, '');
+        } else {
+          // It's Czech format, use as-is (SPAYD accepts Czech format too)
+          accountNumber = account;
+        }
+      }
+      
+      if (accountNumber) {
+        qrParts.push(`ACC:${accountNumber}`);
+      }
     }
     
     // Add amount
