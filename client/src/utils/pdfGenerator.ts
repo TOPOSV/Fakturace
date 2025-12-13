@@ -590,7 +590,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   yPos = vatTableEndY + 10;
   
   // ============================================
-  // QR KOD PLATBY - Below stamp box on the right
+  // QR KOD PLATBY - Left side, at same height as stamp
   // ============================================
   try {
     // Generate QR Payment Code according to Czech standard SPD*1.0
@@ -625,10 +625,10 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
       }
     });
     
-    // Add QR code below the stamp box (right-aligned, under stamp)
+    // Add QR code on LEFT side, at same height as stamp (side-by-side layout)
     const qrSize = 35; // 35mm QR code
-    const qrX = totalBoxX; // Right-aligned, same as stamp and total box
-    const qrY = stampYPos + 37; // Below stamp box (stamp box is 30mm tall + 2mm line + 5mm spacing)
+    const qrX = margin; // LEFT-aligned at margin
+    const qrY = stampYPos + 2; // Same height as stamp box
     
     doc.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
     
