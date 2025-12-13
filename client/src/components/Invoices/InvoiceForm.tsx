@@ -6,22 +6,27 @@ interface InvoiceFormProps {
   onClose: () => void;
   onSuccess: () => void;
   invoice?: any;
+  copyData?: any;
 }
 
-const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }) => {
+const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, copyData }) => {
   const [clients, setClients] = useState<any[]>([]);
+  
+  // Determine if we're copying (copyData provided) or editing (invoice provided)
+  const sourceData = copyData || invoice;
+  
   const [formData, setFormData] = useState({
-    client_id: invoice?.client_id?.toString() || '',
-    type: invoice?.type || 'invoice',
+    client_id: sourceData?.client_id?.toString() || '',
+    type: sourceData?.type || 'invoice',
     issue_date: invoice?.issue_date ? new Date(invoice.issue_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     due_date: invoice?.due_date ? new Date(invoice.due_date).toISOString().split('T')[0] : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     tax_date: invoice?.tax_date ? new Date(invoice.tax_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-    currency: invoice?.currency || 'CZK',
-    notes: invoice?.notes || '',
+    currency: sourceData?.currency || 'CZK',
+    notes: sourceData?.notes || '',
   });
   const [items, setItems] = useState(
-    invoice?.items && invoice.items.length > 0 
-      ? invoice.items 
+    sourceData?.items && sourceData.items.length > 0 
+      ? sourceData.items 
       : [{ description: '', quantity: 1, unit_price: '', vat_rate: 21 }]
   );
   const [loading, setLoading] = useState(false);
@@ -38,15 +43,15 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
     phone: '',
   });
   const [lookingUpIco, setLookingUpIco] = useState(false);
-  const [pricesIncludeVat, setPricesIncludeVat] = useState(true);
+  const [pricesIncludeVat, setPricesIncludeVat] = useState(sourceData?.prices_include_vat !== undefined ? sourceData.prices_include_vat : true);
 
   useEffect(() => {
     loadClients();
-    // If editing invoice, load its items
-    if (invoice?.id) {
+    // If editing invoice (not copying), load its items
+    if (invoice?.id && !copyData) {
       loadInvoiceItems(invoice.id);
     }
-  }, [invoice]);
+  }, [invoice, copyData]);
 
   const loadClients = async () => {
     try {

@@ -22,6 +22,7 @@
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .quick-filter-btn {
@@ -128,7 +129,7 @@
 
 .data-table th:nth-child(9),
 .data-table td:nth-child(9) {
-  min-width: 160px; /* Akce */
+  min-width: 200px; /* Akce - increased for copy button */
   text-align: center;
 }
 
@@ -173,6 +174,10 @@
 
 .edit-btn:hover {
   background: #e3f2fd;
+}
+
+.copy-btn:hover {
+  background: #f3e5f5;
 }
 
 .pdf-btn:hover {

@@ -11,6 +11,7 @@ const InvoiceList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<any>(null);
+  const [copyingInvoice, setCopyingInvoice] = useState<any>(null);
   const [quickFilter, setQuickFilter] = useState<string>('all');
   const [filters, setFilters] = useState({
     number: '',
@@ -56,6 +57,10 @@ const InvoiceList: React.FC = () => {
       filtered = filtered.filter(inv => inv.status === 'overdue');
     } else if (quickFilter === 'archive') {
       filtered = filtered.filter(inv => inv.status === 'cancelled');
+    } else if (quickFilter === 'issued') {
+      filtered = filtered.filter(inv => inv.type === 'invoice');
+    } else if (quickFilter === 'received') {
+      filtered = filtered.filter(inv => inv.type === 'received');
     }
     
     // Apply column filters
@@ -164,7 +169,40 @@ const InvoiceList: React.FC = () => {
 
   const handleEdit = (invoice: any) => {
     setEditingInvoice(invoice);
+    setCopyingInvoice(null);
     setShowForm(true);
+  };
+
+  const handleCopy = async (invoice: any) => {
+    try {
+      // Fetch full invoice details with items
+      const fullInvoiceResponse = await axios.get(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/invoices/${invoice.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      
+      const fullInvoice = fullInvoiceResponse.data;
+      
+      // Prepare copy data (without id, number, dates, status)
+      const copyData = {
+        client_id: fullInvoice.client_id,
+        type: fullInvoice.type,
+        prices_include_vat: fullInvoice.prices_include_vat,
+        payment_method: fullInvoice.payment_method,
+        items: fullInvoice.items, // Pre-fill items
+      };
+      
+      setCopyingInvoice(copyData);
+      setEditingInvoice(null);
+      setShowForm(true);
+    } catch (error) {
+      console.error('Failed to copy invoice:', error);
+      alert('Nepodařilo se zkopírovat fakturu');
+    }
   };
 
   const handleExportPDF = async (invoice: any) => {
@@ -204,6 +242,7 @@ const InvoiceList: React.FC = () => {
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingInvoice(null);
+    setCopyingInvoice(null);
   };
 
   const handleSuccess = () => {
@@ -243,6 +282,18 @@ const InvoiceList: React.FC = () => {
           onClick={() => setQuickFilter('all')}
         >
           VŠE
+        </button>
+        <button 
+          className={`quick-filter-btn ${quickFilter === 'issued' ? 'active' : ''}`}
+          onClick={() => setQuickFilter('issued')}
+        >
+          VYDANÉ FAKTURY
+        </button>
+        <button 
+          className={`quick-filter-btn ${quickFilter === 'received' ? 'active' : ''}`}
+          onClick={() => setQuickFilter('received')}
+        >
+          PŘIJATÉ FAKTURY
         </button>
         <button 
           className={`quick-filter-btn ${quickFilter === 'paid' ? 'active' : ''}`}
@@ -322,6 +373,13 @@ const InvoiceList: React.FC = () => {
                       ✏️
                     </button>
                     <button
+                      onClick={() => handleCopy(invoice)}
+                      className="action-btn copy-btn"
+                      title="Kopírovat fakturu"
+                    >
+                      📋
+                    </button>
+                    <button
                       onClick={() => handleExportPDF(invoice)}
                       className="action-btn pdf-btn"
                       title="Export do PDF"
@@ -391,6 +449,7 @@ const InvoiceList: React.FC = () => {
           onClose={handleCloseForm}
           onSuccess={handleSuccess}
           invoice={editingInvoice}
+          copyData={copyingInvoice}
         />
       )}
     </div>
