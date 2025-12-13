@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { statsService } from '../../services';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './Dashboard.css';
+import api from '../../services/api';
 
 const Dashboard: React.FC = () => {
   const [dashboardData, setDashboardData] = useState<any>(null);
@@ -9,10 +10,50 @@ const Dashboard: React.FC = () => {
   const [period, setPeriod] = useState<'month' | 'quarter' | 'year'>('month');
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [includeVat, setIncludeVat] = useState<boolean>(true);
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
+
+  useEffect(() => {
+    loadAvailableYears();
+  }, []);
 
   useEffect(() => {
     loadDashboard();
   }, [period, year, includeVat]);
+
+  const loadAvailableYears = async () => {
+    try {
+      const response = await api.get('/invoices');
+      const invoices = response.data;
+      
+      // Extract unique years from invoice dates
+      const years = new Set<number>();
+      invoices.forEach((invoice: any) => {
+        if (invoice.issue_date) {
+          const invoiceYear = new Date(invoice.issue_date).getFullYear();
+          years.add(invoiceYear);
+        }
+      });
+      
+      // Sort years in descending order
+      const sortedYears = Array.from(years).sort((a, b) => b - a);
+      
+      // If no invoices, use current year
+      if (sortedYears.length === 0) {
+        sortedYears.push(new Date().getFullYear());
+      }
+      
+      setAvailableYears(sortedYears);
+      
+      // Set year to first available year if current year not in list
+      if (sortedYears.length > 0 && !sortedYears.includes(year)) {
+        setYear(sortedYears[0]);
+      }
+    } catch (error) {
+      console.error('Failed to load available years:', error);
+      // Fallback to current year
+      setAvailableYears([new Date().getFullYear()]);
+    }
+  };
 
   const loadDashboard = async () => {
     setLoading(true);
@@ -81,7 +122,7 @@ const Dashboard: React.FC = () => {
             <div className="control-group">
               <label>Rok:</label>
               <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="year-select">
-                {[2024, 2023, 2022, 2021, 2020].map(y => (
+                {availableYears.map(y => (
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
