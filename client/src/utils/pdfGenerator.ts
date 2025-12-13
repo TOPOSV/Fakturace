@@ -607,33 +607,31 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     // SPAYD format uses single line with asterisk separators (not newlines)
     const qrParts = ['SPD*1.0'];
     
-    // Add account if available - format properly for SPAYD
-    // Czech banking standard: No spaces or hyphens in account number
-    // IBAN: CZ12345678901234567890 (country code + numbers only)
-    // Czech format: 1234567890/0100 (account/bank_code, prefix hyphen removed)
+    // Add account if available - ONLY IBAN format supported for QR codes
+    // Czech banking standard for SPAYD: IBAN format only (no slashes, no bank codes)
+    // IBAN: CZ12345678901234567890 (country code + numbers only, no spaces, no hyphens)
+    // Czech format with /bank_code is NOT supported in SPAYD QR codes
     if (userData.iban || userData.bank_account) {
       let accountNumber = '';
       
       if (userData.iban) {
         // IBAN format: CZ65 0800 0000 1920 0014 5399 -> CZ6508000000192000145399
-        // Remove ALL spaces and hyphens
+        // Remove ALL spaces, hyphens, and any other separators
         accountNumber = userData.iban.replace(/[\s-]/g, '');
       } else if (userData.bank_account) {
         const account = userData.bank_account.trim();
         
-        // Check if it's IBAN format (starts with CZ or other country code)
+        // Check if it's IBAN format (starts with CZ or other 2-letter country code)
         if (/^[A-Z]{2}/.test(account)) {
           // It's IBAN - remove all spaces and hyphens
           accountNumber = account.replace(/[\s-]/g, '');
-        } else {
-          // It's Czech format: 19-1234567890/0100 or 1234567890/0100
-          // Remove prefix hyphen but keep the /bank_code part
-          // Example: "19-1234567890/0100" -> "1234567890/0100"
-          accountNumber = account.replace(/^\d+-/, '');
         }
+        // If it's Czech format with slash (e.g., 1234567890/0100), skip it
+        // SPAYD QR codes require IBAN format, not Czech format
       }
       
-      if (accountNumber) {
+      // Only add account if it's valid IBAN (starts with country code, no slashes)
+      if (accountNumber && /^[A-Z]{2}[0-9]+$/.test(accountNumber)) {
         qrParts.push(`ACC:${accountNumber}`);
       }
     }
