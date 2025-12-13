@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { setupPDFFont } from '../fonts/fontLoader';
+import QRCode from 'qrcode';
 
 interface InvoiceItem {
   description: string;
@@ -401,11 +402,11 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     return [
       item.description || '',
       qty.toString(),
-      unitPrice.toFixed(2).replace('.', ',') + ' Kč',
-      vatRate.toString() + ' %',
-      subtotal.toFixed(2).replace('.', ',') + ' Kč',
-      vatAmount.toFixed(2).replace('.', ',') + ' Kč',
-      total.toFixed(2).replace('.', ',') + ' Kč'
+      `${unitPrice.toFixed(2).replace('.', ',')} Kč`,
+      `${vatRate} %`,
+      `${subtotal.toFixed(2).replace('.', ',')} Kč`,
+      `${vatAmount.toFixed(2).replace('.', ',')} Kč`,
+      `${total.toFixed(2).replace('.', ',')} Kč`
     ];
   });
   
@@ -464,9 +465,9 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ============================================
   // SOUHRNNA TABULKA DPH s barvami - Using precalculated values
   // ============================================
-  const subtotalAmount = finalSubtotal.toFixed(2).replace('.', ',') + ' Kč';
-  const vatAmount = finalVat.toFixed(2).replace('.', ',') + ' Kč';
-  const totalAmountFormatted = finalTotal.toFixed(2).replace('.', ',') + ' Kč';
+  const subtotalAmount = `${finalSubtotal.toFixed(2).replace('.', ',')} Kč`;
+  const vatAmount = `${finalVat.toFixed(2).replace('.', ',')} Kč`;
+  const totalAmountFormatted = `${finalTotal.toFixed(2).replace('.', ',')} Kč`;
   
   autoTable(doc, {
     startY: yPos,
@@ -557,18 +558,62 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   yPos = vatTableEndY + 10;
   
   // ============================================
-  // CELKEM K UHRADE - Below stamp box
+  // CELKEM K UHRADE - Below stamp box - RIGHT ALIGNED
   // ============================================
   const totalBoxY = stampYPos + 35; // Position below stamp box (stamp box is 30mm tall + 5mm spacing)
+  const totalBoxWidth = 80; // Width of the box
+  const totalBoxX = pageWidth - margin - totalBoxWidth; // Right-aligned
   
-  // Final total box
+  // Final total box - RIGHT ALIGNED
   doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-  doc.roundedRect(margin, totalBoxY, 80, 10, 2, 2, 'F'); // Narrower box (80mm instead of full width)
+  doc.roundedRect(totalBoxX, totalBoxY, totalBoxWidth, 10, 2, 2, 'F');
   
   doc.setFontSize(12);
   safeSetFont('bold');
   doc.setTextColor(255, 255, 255);
-  doc.text(`Celkem k úhradě: ${totalAmountFormatted}`, margin + 3, totalBoxY + 7);
+  doc.text(`Celkem k úhradě: ${totalAmountFormatted}`, totalBoxX + 3, totalBoxY + 7);
+  
+  // ============================================
+  // QR KOD PLATBY - Below total box
+  // ============================================
+  try {
+    // Generate QR Payment Code according to Czech standard
+    // Format: SPD*1.0*ACC:CZ1234567890*AM:12345.67*CC:CZK*MSG:VF20240001*X-VS:20240001
+    const qrData = [
+      'SPD*1.0',
+      `ACC:${userData.iban || userData.bank_account || ''}`,
+      `AM:${finalTotal.toFixed(2)}`,
+      'CC:CZK',
+      `MSG:${invoice.number}`,
+      `X-VS:${invoice.number}`
+    ].filter(item => !item.endsWith(':')) // Remove empty fields
+     .join('*');
+    
+    // Generate QR code as data URL
+    const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
+      width: 200,
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
+    
+    // Add QR code below the total box (right-aligned)
+    const qrSize = 35; // 35mm QR code
+    const qrX = totalBoxX + (totalBoxWidth - qrSize) / 2; // Center QR code in total box width
+    const qrY = totalBoxY + 12; // Below total box
+    
+    doc.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+    
+    // Add small text below QR code
+    doc.setFontSize(7);
+    safeSetFont('normal');
+    doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
+    doc.text('Naskenujte pro platbu', qrX + (qrSize / 2), qrY + qrSize + 4, { align: 'center' });
+  } catch (error) {
+    console.warn('Failed to generate QR code:', error);
+  }
   
   // ============================================
   // DOLNI CAST - ZAKONCENI
