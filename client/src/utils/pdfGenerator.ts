@@ -169,7 +169,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ============================================
   let yPos = margin + 25; // Moved 5mm lower (was +20, now +25)
   const col1X = margin;
-  const col2X = margin + (contentWidth / 2) + 10;
+  const col2X = margin + (contentWidth / 2) + 5; // Moved 5mm left (was +10, now +5)
   const boxWidth = (contentWidth / 2) - 5;
   
   // Track where supplier box will start
@@ -405,11 +405,11 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     return [
       item.description || '',
       qty.toString(),
-      `${unitPrice.toFixed(2).replace('.', ',')} Kč`,
+      unitPrice.toFixed(2).replace('.', ','), // Removed "Kč"
       `${vatRate} %`,
-      `${subtotal.toFixed(2).replace('.', ',')} Kč`,
-      `${vatAmount.toFixed(2).replace('.', ',')} Kč`,
-      `${total.toFixed(2).replace('.', ',')} Kč`
+      subtotal.toFixed(2).replace('.', ','), // Removed "Kč"
+      vatAmount.toFixed(2).replace('.', ','), // Removed "Kč"
+      total.toFixed(2).replace('.', ',') // Removed "Kč"
     ];
   });
   
@@ -593,9 +593,9 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // QR KOD PLATBY - Left side, at same height as stamp
   // ============================================
   try {
-    // Generate QR Payment Code according to Czech standard SPD*1.0
-    // Format: SPD*1.0*ACC:CZ1234567890*AM:12345.67*CC:CZK*MSG:Platba za objednavku 12345
-    // Build QR data parts
+    // Generate QR Payment Code according to Czech SPAYD standard
+    // Format: SPD*1.0*ACC:CZ1234567890*AM:12345.67*CC:CZK*MSG:Platba za VF20240001
+    // SPAYD format uses single line with asterisk separators (not newlines)
     const qrParts = ['SPD*1.0'];
     
     // Add account if available
@@ -610,10 +610,10 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     qrParts.push('CC:CZK');
     
     // Add message (invoice number)
-    qrParts.push(`MSG:Platba za objednavku ${invoice.number}`);
+    qrParts.push(`MSG:Platba za ${invoice.number}`);
     
-    // Join with newline as per Czech banking standard
-    const qrData = qrParts.join('\n');
+    // Join with asterisk as per Czech SPAYD standard (single line format)
+    const qrData = qrParts.join('*');
     
     // Generate QR code as data URL
     const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
