@@ -3,76 +3,160 @@ import { db } from '../config/database';
 import { AuthRequest } from '../middleware/auth';
 
 export const getStatistics = (req: AuthRequest, res: Response) => {
-  const { period, year, month, quarter } = req.query;
+  const { period, year, includeVat } = req.query;
+  const includeVatBool = includeVat === 'true';
 
-  let dateFilter = '';
-  const params: any[] = [req.userId];
+  const czechMonths = [
+    'Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen',
+    'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'
+  ];
 
-  if (period === 'month' && year && month) {
-    dateFilter = "AND strftime('%Y-%m', transaction_date) = ?";
-    params.push(`${year}-${String(month).padStart(2, '0')}`);
-  } else if (period === 'quarter' && year && quarter) {
-    const q = parseInt(quarter as string);
-    const startMonth = (q - 1) * 3 + 1;
-    const endMonth = q * 3;
-    dateFilter = `AND strftime('%Y', transaction_date) = ? AND CAST(strftime('%m', transaction_date) AS INTEGER) BETWEEN ? AND ?`;
-    params.push(year, startMonth, endMonth);
-  } else if (period === 'year' && year) {
-    dateFilter = "AND strftime('%Y', transaction_date) = ?";
-    params.push(year);
-  }
-
-  // Get income and expenses
-  const sql = `
+  // Get all invoices for the specified year
+  const invoiceSql = `
     SELECT 
+      id,
       type,
-      SUM(amount) as total_amount,
-      SUM(vat_amount) as total_vat,
-      COUNT(*) as count
-    FROM transactions
-    WHERE user_id = ? ${dateFilter}
-    GROUP BY type
+      issue_date,
+      total,
+      vat_amount
+    FROM invoices
+    WHERE user_id = ? AND strftime('%Y', issue_date) = ?
+    ORDER BY issue_date ASC
   `;
 
-  db.all(sql, params, (err, transactionStats: any[]) => {
+  db.all(invoiceSql, [req.userId, year], (err, invoices: any[]) => {
     if (err) {
-      return res.status(500).json({ error: 'Failed to fetch statistics' });
+      return res.status(500).json({ error: 'Failed to fetch invoice data' });
     }
 
-    // Get invoice statistics
-    const invoiceSql = `
-      SELECT 
-        type,
-        status,
-        COUNT(*) as count,
-        SUM(total) as total_amount
-      FROM invoices
-      WHERE user_id = ? ${dateFilter.replace('transaction_date', 'issue_date')}
-      GROUP BY type, status
-    `;
+    const chartData: any[] = [];
 
-    db.all(invoiceSql, params, (err, invoiceStats: any[]) => {
-      if (err) {
-        return res.status(500).json({ error: 'Failed to fetch invoice statistics' });
-      }
+    if (period === 'month') {
+      // Generate monthly data for the year
+      const monthlyIncome: { [key: number]: number } = {};
+      const monthlyExpenses: { [key: number]: number } = {};
 
-      const income = transactionStats.find((t) => t.type === 'income') || { total_amount: 0, total_vat: 0, count: 0 };
-      const expenses = transactionStats.find((t) => t.type === 'expense') || { total_amount: 0, total_vat: 0, count: 0 };
+      invoices.forEach((invoice) => {
+        const month = new Date(invoice.issue_date).getMonth() + 1;
+        const amount = includeVatBool ? invoice.total : (invoice.total - (invoice.vat_amount || 0));
 
-      res.json({
-        income: {
-          total: income.total_amount || 0,
-          vat: income.total_vat || 0,
-          count: income.count || 0,
-        },
-        expenses: {
-          total: expenses.total_amount || 0,
-          vat: expenses.total_vat || 0,
-          count: expenses.count || 0,
-        },
-        profit: (income.total_amount || 0) - (expenses.total_amount || 0),
-        invoices: invoiceStats,
+        if (invoice.type === 'invoice' || invoice.type === 'proforma') {
+          monthlyIncome[month] = (monthlyIncome[month] || 0) + amount;
+        } else {
+          monthlyExpenses[month] = (monthlyExpenses[month] || 0) + amount;
+        }
       });
+
+      for (let month = 1; month <= 12; month++) {
+        const income = monthlyIncome[month] || 0;
+        const expenses = monthlyExpenses[month] || 0;
+        chartData.push({
+          period: czechMonths[month - 1],
+          income,
+          expenses,
+          difference: income - expenses
+        });
+      }
+    } else if (period === 'quarter') {
+      // Generate quarterly data
+      const quarterlyIncome: { [key: number]: number } = {};
+      const quarterlyExpenses: { [key: number]: number } = {};
+
+      invoices.forEach((invoice) => {
+        const month = new Date(invoice.issue_date).getMonth() + 1;
+        const quarter = Math.ceil(month / 3);
+        const amount = includeVatBool ? invoice.total : (invoice.total - (invoice.vat_amount || 0));
+
+        if (invoice.type === 'invoice' || invoice.type === 'proforma') {
+          quarterlyIncome[quarter] = (quarterlyIncome[quarter] || 0) + amount;
+        } else {
+          quarterlyExpenses[quarter] = (quarterlyExpenses[quarter] || 0) + amount;
+        }
+      });
+
+      for (let quarter = 1; quarter <= 4; quarter++) {
+        const income = quarterlyIncome[quarter] || 0;
+        const expenses = quarterlyExpenses[quarter] || 0;
+        chartData.push({
+          period: `Q${quarter}`,
+          income,
+          expenses,
+          difference: income - expenses
+        });
+      }
+    } else if (period === 'year') {
+      // Generate yearly data for last 5 years
+      const currentYear = parseInt(year as string);
+      const yearlyIncome: { [key: number]: number } = {};
+      const yearlyExpenses: { [key: number]: number } = {};
+
+      // Fetch all invoices from last 5 years
+      const yearRangeSql = `
+        SELECT 
+          issue_date,
+          type,
+          total,
+          vat_amount
+        FROM invoices
+        WHERE user_id = ? AND strftime('%Y', issue_date) >= ? AND strftime('%Y', issue_date) <= ?
+      `;
+
+      db.all(yearRangeSql, [req.userId, (currentYear - 4).toString(), currentYear.toString()], (err, allInvoices: any[]) => {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to fetch yearly data' });
+        }
+
+        allInvoices.forEach((invoice) => {
+          const invoiceYear = new Date(invoice.issue_date).getFullYear();
+          const amount = includeVatBool ? invoice.total : (invoice.total - (invoice.vat_amount || 0));
+
+          if (invoice.type === 'invoice' || invoice.type === 'proforma') {
+            yearlyIncome[invoiceYear] = (yearlyIncome[invoiceYear] || 0) + amount;
+          } else {
+            yearlyExpenses[invoiceYear] = (yearlyExpenses[invoiceYear] || 0) + amount;
+          }
+        });
+
+        for (let y = currentYear - 4; y <= currentYear; y++) {
+          const income = yearlyIncome[y] || 0;
+          const expenses = yearlyExpenses[y] || 0;
+          chartData.push({
+            period: y.toString(),
+            income,
+            expenses,
+            difference: income - expenses
+          });
+        }
+
+        // Get recent invoices
+        getRecentInvoices(req, res, chartData);
+      });
+      return; // Exit early for yearly view since it has nested callback
+    }
+
+    // For monthly and quarterly, get recent invoices
+    getRecentInvoices(req, res, chartData);
+  });
+};
+
+const getRecentInvoices = (req: AuthRequest, res: Response, chartData: any[]) => {
+  const recentSql = `
+    SELECT i.*, c.company_name as client_name
+    FROM invoices i
+    LEFT JOIN clients c ON i.client_id = c.id
+    WHERE i.user_id = ?
+    ORDER BY i.created_at DESC
+    LIMIT 10
+  `;
+
+  db.all(recentSql, [req.userId], (err, recentInvoices) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to fetch recent invoices' });
+    }
+
+    res.json({
+      chartData,
+      recentInvoices
     });
   });
 };
