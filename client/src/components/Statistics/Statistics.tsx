@@ -21,7 +21,8 @@ const Statistics: React.FC = () => {
 
   React.useEffect(() => {
     loadStatistics();
-  }, [period, year, loadStatistics]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period, year]);
 
   if (loading) return <div>Načítání...</div>;
 
