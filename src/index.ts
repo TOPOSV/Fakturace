@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { initializeDatabase } from './config/database';
 import { addLogoAndStampColumns } from './migrations/addLogoStamp';
+import { migrateAddReceivedInvoiceType } from './migrations/001_add_received_invoice_type';
 
 import authRoutes from './routes/auth';
 import clientRoutes from './routes/clients';
@@ -24,10 +25,14 @@ app.use(express.json({ limit: '10mb' })); // Increase limit for base64 images
 
 // Initialize database and run migrations
 initializeDatabase();
-setTimeout(() => {
-  addLogoAndStampColumns().catch(err => {
+setTimeout(async () => {
+  try {
+    await addLogoAndStampColumns();
+    await migrateAddReceivedInvoiceType();
+    console.log('All migrations completed successfully');
+  } catch (err) {
     console.error('Migration error:', err);
-  });
+  }
 }, 1000); // Wait for DB initialization
 
 // Routes

@@ -53,13 +53,13 @@ export const initializeDatabase = () => {
       )
     `);
 
-    // Invoices table (for invoices, proformas, and quotes)
+    // Invoices table (for issued and received invoices)
     db.run(`
       CREATE TABLE IF NOT EXISTS invoices (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
         client_id INTEGER NOT NULL,
-        type TEXT NOT NULL CHECK(type IN ('invoice', 'proforma', 'quote')),
+        type TEXT NOT NULL CHECK(type IN ('invoice', 'received', 'proforma', 'quote')),
         number TEXT NOT NULL,
         issue_date DATE NOT NULL,
         due_date DATE NOT NULL,
