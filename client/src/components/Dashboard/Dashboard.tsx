@@ -1,25 +1,61 @@
 import React, { useEffect, useState } from 'react';
 import { statsService } from '../../services';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<'month' | 'quarter' | 'year'>('month');
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [includeVat, setIncludeVat] = useState<boolean>(true);
 
   useEffect(() => {
     loadDashboard();
-  }, []);
+  }, [period, year, includeVat]);
 
   const loadDashboard = async () => {
+    setLoading(true);
     try {
-      const data = await statsService.getDashboard();
+      const params = { period, year, includeVat };
+      const data = await statsService.getStatistics(params);
       setDashboardData(data);
     } catch (error) {
       console.error('Failed to load dashboard:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('cs-CZ', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value) + ' Kč';
+  };
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="custom-tooltip">
+          <p className="tooltip-label">{data.period}</p>
+          <p className="tooltip-income">
+            <span className="dot green"></span>
+            Vydané faktury: <strong>{formatCurrency(data.income)}</strong>
+          </p>
+          <p className="tooltip-expense">
+            <span className="dot red"></span>
+            Přijaté faktury: <strong>{formatCurrency(data.expenses)}</strong>
+          </p>
+          <p className="tooltip-difference">
+            <span className="dot blue"></span>
+            Rozdíl: <strong>{formatCurrency(data.difference)}</strong>
+          </p>
+        </div>
+      );
+    }
+    return null;
   };
 
   if (loading) {
@@ -30,29 +66,105 @@ const Dashboard: React.FC = () => {
     <div className="dashboard">
       <h1>Dashboard</h1>
 
-      <div className="stats-grid">
-        <div className="stat-card warning">
-          <h3>Nezaplacené faktury po splatnosti</h3>
-          <div className="stat-value">{dashboardData?.overdueInvoices?.count || 0}</div>
-          <div className="stat-label">Celkem: {dashboardData?.overdueInvoices?.amount?.toFixed(2) || 0} Kč</div>
-        </div>
-      </div>
-
       <div className="chart-section">
-        <h2>Přehled příjmů a výdajů (aktuální rok)</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={dashboardData?.monthlyChart || []}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="income" fill="#4caf50" name="Příjmy" />
-            <Bar dataKey="expenses" fill="#f44336" name="Výdaje" />
-          </BarChart>
+        <div className="chart-header">
+          <h2>Přehled fakturace</h2>
+          <div className="chart-controls">
+            <div className="control-group">
+              <label>Období:</label>
+              <select value={period} onChange={(e) => setPeriod(e.target.value as any)} className="period-select">
+                <option value="month">Měsíc</option>
+                <option value="quarter">Kvartál</option>
+                <option value="year">Rok</option>
+              </select>
+            </div>
+            <div className="control-group">
+              <label>Rok:</label>
+              <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="year-select">
+                {[2024, 2023, 2022, 2021, 2020].map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+            <div className="control-group vat-toggle">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={includeVat}
+                  onChange={(e) => setIncludeVat(e.target.checked)}
+                />
+                <span>Ceny s DPH</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <ResponsiveContainer width="100%" height={400}>
+          <LineChart data={dashboardData?.chartData || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+            <defs>
+              <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#43A047" stopOpacity={0.1}/>
+                <stop offset="95%" stopColor="#43A047" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#E53935" stopOpacity={0.1}/>
+                <stop offset="95%" stopColor="#E53935" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorDifference" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#1E88E5" stopOpacity={0.1}/>
+                <stop offset="95%" stopColor="#1E88E5" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E0" />
+            <XAxis 
+              dataKey="period" 
+              stroke="#666"
+              style={{ fontSize: '12px', fontWeight: 500 }}
+            />
+            <YAxis 
+              stroke="#666"
+              style={{ fontSize: '12px' }}
+              tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend 
+              wrapperStyle={{ paddingTop: '20px' }}
+              iconType="circle"
+            />
+            <Line 
+              type="monotone" 
+              dataKey="income" 
+              stroke="#43A047" 
+              strokeWidth={3}
+              dot={{ fill: '#43A047', strokeWidth: 2, r: 5 }}
+              activeDot={{ r: 7 }}
+              name="Vydané faktury"
+              fill="url(#colorIncome)"
+            />
+            <Line 
+              type="monotone" 
+              dataKey="expenses" 
+              stroke="#E53935" 
+              strokeWidth={3}
+              dot={{ fill: '#E53935', strokeWidth: 2, r: 5 }}
+              activeDot={{ r: 7 }}
+              name="Přijaté faktury"
+              fill="url(#colorExpense)"
+            />
+            <Line 
+              type="monotone" 
+              dataKey="difference" 
+              stroke="#1E88E5" 
+              strokeWidth={2}
+              strokeDasharray="5 5"
+              dot={{ fill: '#1E88E5', strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6 }}
+              name="Rozdíl"
+              fill="url(#colorDifference)"
+            />
+          </LineChart>
         </ResponsiveContainer>
       </div>
-
       <div className="recent-invoices">
         <h2>Poslední faktury</h2>
         <table className="data-table">
