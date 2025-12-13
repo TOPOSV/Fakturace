@@ -485,7 +485,9 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
       lineWidth: 0.1,
       halign: 'right',
       textColor: colors.text,
-      minCellWidth: 30 // Ensure cells are wide enough to prevent wrapping
+      minCellWidth: 40, // Increased from 30 to 40 to prevent "Kč" wrapping
+      cellWidth: 'wrap',
+      overflow: 'linebreak'
     },
     headStyles: {
       fillColor: colors.accent,
@@ -495,14 +497,16 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     },
     bodyStyles: {
       fontStyle: 'bold',
-      fontSize: 11
+      fontSize: 11,
+      minCellHeight: 8
     },
     columnStyles: {
-      0: { minCellWidth: 30 }, // Základ
-      1: { minCellWidth: 30 }, // Výše DPH
-      2: { minCellWidth: 30 }  // Celkem
+      0: { minCellWidth: 40, cellWidth: 'auto' }, // Základ
+      1: { minCellWidth: 40, cellWidth: 'auto' }, // Výše DPH
+      2: { minCellWidth: 40, cellWidth: 'auto' }  // Celkem
     },
-    margin: { left: margin + 100, right: margin }
+    // Align table to match items table end position
+    margin: { left: pageWidth - margin - 130, right: margin }
   });
   
   // @ts-ignore
@@ -589,17 +593,27 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // QR KOD PLATBY - Below total box
   // ============================================
   try {
-    // Generate QR Payment Code according to Czech standard
-    // Format: SPD*1.0*ACC:CZ1234567890*AM:12345.67*CC:CZK*MSG:VF20240001*X-VS:20240001
-    const qrData = [
-      'SPD*1.0',
-      `ACC:${userData.iban || userData.bank_account || ''}`,
-      `AM:${finalTotal.toFixed(2)}`,
-      'CC:CZK',
-      `MSG:${invoice.number}`,
-      `X-VS:${invoice.number}`
-    ].filter(item => !item.endsWith(':')) // Remove empty fields
-     .join('*');
+    // Generate QR Payment Code according to Czech standard SPD*1.0
+    // Format: SPD*1.0*ACC:CZ1234567890*AM:12345.67*CC:CZK*MSG:Platba za objednavku 12345
+    // Build QR data parts
+    const qrParts = ['SPD*1.0'];
+    
+    // Add account if available
+    if (userData.iban || userData.bank_account) {
+      qrParts.push(`ACC:${userData.iban || userData.bank_account}`);
+    }
+    
+    // Add amount
+    qrParts.push(`AM:${finalTotal.toFixed(2)}`);
+    
+    // Add currency
+    qrParts.push('CC:CZK');
+    
+    // Add message (invoice number)
+    qrParts.push(`MSG:Platba za objednavku ${invoice.number}`);
+    
+    // Join with newline as per Czech banking standard
+    const qrData = qrParts.join('\n');
     
     // Generate QR code as data URL
     const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
