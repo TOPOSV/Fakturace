@@ -12,7 +12,8 @@ const InvoiceList: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<any>(null);
   const [copyingInvoice, setCopyingInvoice] = useState<any>(null);
-  const [quickFilter, setQuickFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all'); // 'all', 'issued', 'received'
+  const [statusFilter, setStatusFilter] = useState<string>('all'); // 'all', 'paid', 'unpaid', 'overdue', 'archive'
   const [filters, setFilters] = useState({
     number: '',
     client_name: '',
@@ -32,7 +33,7 @@ const InvoiceList: React.FC = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [invoices, filters, quickFilter]);
+  }, [invoices, filters, typeFilter, statusFilter]);
 
   const loadInvoices = async () => {
     try {
@@ -48,19 +49,22 @@ const InvoiceList: React.FC = () => {
   const applyFilters = () => {
     let filtered = [...invoices];
     
-    // Apply quick filter first
-    if (quickFilter === 'paid') {
-      filtered = filtered.filter(inv => inv.status === 'paid');
-    } else if (quickFilter === 'unpaid') {
-      filtered = filtered.filter(inv => inv.status === 'unpaid' || inv.status === 'sent' || inv.status === 'draft');
-    } else if (quickFilter === 'overdue') {
-      filtered = filtered.filter(inv => inv.status === 'overdue');
-    } else if (quickFilter === 'archive') {
-      filtered = filtered.filter(inv => inv.status === 'cancelled');
-    } else if (quickFilter === 'issued') {
+    // Apply type filter (Vydané/Přijaté faktury)
+    if (typeFilter === 'issued') {
       filtered = filtered.filter(inv => inv.type === 'invoice');
-    } else if (quickFilter === 'received') {
+    } else if (typeFilter === 'received') {
       filtered = filtered.filter(inv => inv.type === 'received');
+    }
+    
+    // Apply status filter (Uhrazeno/Neuhrazeno/Po splatnosti/Archiv)
+    if (statusFilter === 'paid') {
+      filtered = filtered.filter(inv => inv.status === 'paid');
+    } else if (statusFilter === 'unpaid') {
+      filtered = filtered.filter(inv => inv.status === 'unpaid' || inv.status === 'sent' || inv.status === 'draft');
+    } else if (statusFilter === 'overdue') {
+      filtered = filtered.filter(inv => inv.status === 'overdue');
+    } else if (statusFilter === 'archive') {
+      filtered = filtered.filter(inv => inv.status === 'cancelled');
     }
     
     // Apply column filters
@@ -278,44 +282,44 @@ const InvoiceList: React.FC = () => {
 
       <div className="quick-filters">
         <button 
-          className={`quick-filter-btn ${quickFilter === 'all' ? 'active' : ''}`}
-          onClick={() => setQuickFilter('all')}
+          className={`quick-filter-btn ${typeFilter === 'all' && statusFilter === 'all' ? 'active' : ''}`}
+          onClick={() => { setTypeFilter('all'); setStatusFilter('all'); }}
         >
           VŠE
         </button>
         <button 
-          className={`quick-filter-btn ${quickFilter === 'issued' ? 'active' : ''}`}
-          onClick={() => setQuickFilter('issued')}
+          className={`quick-filter-btn ${typeFilter === 'issued' ? 'active' : ''}`}
+          onClick={() => setTypeFilter(typeFilter === 'issued' ? 'all' : 'issued')}
         >
           VYDANÉ FAKTURY
         </button>
         <button 
-          className={`quick-filter-btn ${quickFilter === 'received' ? 'active' : ''}`}
-          onClick={() => setQuickFilter('received')}
+          className={`quick-filter-btn ${typeFilter === 'received' ? 'active' : ''}`}
+          onClick={() => setTypeFilter(typeFilter === 'received' ? 'all' : 'received')}
         >
           PŘIJATÉ FAKTURY
         </button>
         <button 
-          className={`quick-filter-btn ${quickFilter === 'paid' ? 'active' : ''}`}
-          onClick={() => setQuickFilter('paid')}
+          className={`quick-filter-btn ${statusFilter === 'paid' ? 'active' : ''}`}
+          onClick={() => setStatusFilter(statusFilter === 'paid' ? 'all' : 'paid')}
         >
           UHRAZENO
         </button>
         <button 
-          className={`quick-filter-btn ${quickFilter === 'unpaid' ? 'active' : ''}`}
-          onClick={() => setQuickFilter('unpaid')}
+          className={`quick-filter-btn ${statusFilter === 'unpaid' ? 'active' : ''}`}
+          onClick={() => setStatusFilter(statusFilter === 'unpaid' ? 'all' : 'unpaid')}
         >
           NEUHRAZENO
         </button>
         <button 
-          className={`quick-filter-btn ${quickFilter === 'overdue' ? 'active' : ''}`}
-          onClick={() => setQuickFilter('overdue')}
+          className={`quick-filter-btn ${statusFilter === 'overdue' ? 'active' : ''}`}
+          onClick={() => setStatusFilter(statusFilter === 'overdue' ? 'all' : 'overdue')}
         >
           PO SPLATNOSTI
         </button>
         <button 
-          className={`quick-filter-btn ${quickFilter === 'archive' ? 'active' : ''}`}
-          onClick={() => setQuickFilter('archive')}
+          className={`quick-filter-btn ${statusFilter === 'archive' ? 'active' : ''}`}
+          onClick={() => setStatusFilter(statusFilter === 'archive' ? 'all' : 'archive')}
         >
           ARCHIV
         </button>
