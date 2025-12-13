@@ -513,28 +513,44 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   const vatTableEndY = doc.lastAutoTable.finalY;
   
   // ============================================
-  // RAZITKO A PODPIS s rameckem - ALIGNED WITH VAT TABLE
+  // CELKEM K UHRADE - Below VAT table - RIGHT ALIGNED
   // ============================================
-  // Position stamp section lower (20mm down from VAT table alignment - moved 5mm more down)
-  const stampYPos = vatTableEndY - 20; // Moved 5mm down (was -25, now -20)
+  const totalBoxY = vatTableEndY + 5; // Position below VAT table
+  const totalBoxWidth = 80; // Width of the box
+  const totalBoxX = pageWidth - margin - totalBoxWidth; // Right-aligned
+  
+  // Final total box - RIGHT ALIGNED
+  doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+  doc.roundedRect(totalBoxX, totalBoxY, totalBoxWidth, 10, 2, 2, 'F');
+  
+  doc.setFontSize(12);
+  safeSetFont('bold');
+  doc.setTextColor(255, 255, 255);
+  doc.text(`Celkem k úhradě: ${totalAmountFormatted}`, totalBoxX + 3, totalBoxY + 7);
+  
+  // ============================================
+  // RAZITKO A PODPIS s rameckem - Below total box, RIGHT ALIGNED
+  // ============================================
+  // Position stamp section below total box (5mm spacing)
+  const stampYPos = totalBoxY + 15; // 10mm box height + 5mm spacing
   
   doc.setFontSize(10);
   safeSetFont('bold');
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
-  // Move text to the left (was pageWidth - margin - 85)
-  doc.text('Razítko a podpis:', margin, stampYPos);
+  // Right-aligned text above stamp box
+  doc.text('Razítko a podpis:', totalBoxX, stampYPos);
   
-  // Signature box - SMALLER: positioned on left side, moved down
+  // Signature box - RIGHT ALIGNED: positioned on right side
   doc.setDrawColor(colors.mediumGray[0], colors.mediumGray[1], colors.mediumGray[2]);
   doc.setLineWidth(0.3);
-  doc.rect(margin, stampYPos + 2, 65, 30); // Reduced from 80x35 to 65x30
+  doc.rect(totalBoxX, stampYPos + 2, 65, 30); // 65x30mm box, right-aligned
   
   // ADD STAMP inside the signature box if provided - LARGER dimensions with proper aspect ratio
   if (userData.stamp) {
     try {
-      // Stamp dimensions: INCREASED - Maintain aspect ratio, max 45x25mm (was 35x30)
-      const maxStampWidth = 45; // Increased from 35 to 45mm
-      const maxStampHeight = 25; // Reduced from 30 to 25mm (box is shorter now)
+      // Stamp dimensions: INCREASED - Maintain aspect ratio, max 45x25mm
+      const maxStampWidth = 45;
+      const maxStampHeight = 25;
       
       // Load image properly to get dimensions
       const stampImgElement = new Image();
@@ -559,9 +575,9 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
         stampWidth = stampHeight * stampAspectRatio;
       }
       
-      const stampX = margin + 5;
-      // Position stamp 3mm from top of box (was 5mm)
-      const stampY = stampYPos + 3;
+      const stampX = totalBoxX + 5; // Right-aligned with total box + padding
+      // Position stamp 3mm from top of box
+      const stampY = stampYPos + 5;
       doc.addImage(userData.stamp, 'PNG', stampX, stampY, stampWidth, stampHeight);
       
       // IMPORTANT: Re-set font after addImage() as jsPDF resets it to default
@@ -574,23 +590,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   yPos = vatTableEndY + 10;
   
   // ============================================
-  // CELKEM K UHRADE - Below stamp box - RIGHT ALIGNED
-  // ============================================
-  const totalBoxY = stampYPos + 35; // Position below stamp box (stamp box is 30mm tall + 5mm spacing)
-  const totalBoxWidth = 80; // Width of the box
-  const totalBoxX = pageWidth - margin - totalBoxWidth; // Right-aligned
-  
-  // Final total box - RIGHT ALIGNED
-  doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-  doc.roundedRect(totalBoxX, totalBoxY, totalBoxWidth, 10, 2, 2, 'F');
-  
-  doc.setFontSize(12);
-  safeSetFont('bold');
-  doc.setTextColor(255, 255, 255);
-  doc.text(`Celkem k úhradě: ${totalAmountFormatted}`, totalBoxX + 3, totalBoxY + 7);
-  
-  // ============================================
-  // QR KOD PLATBY - Below total box
+  // QR KOD PLATBY - Below stamp box on the right
   // ============================================
   try {
     // Generate QR Payment Code according to Czech standard SPD*1.0
@@ -625,10 +625,10 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
       }
     });
     
-    // Add QR code below the stamp box (left-aligned, under stamp)
+    // Add QR code below the stamp box (right-aligned, under stamp)
     const qrSize = 35; // 35mm QR code
-    const qrX = margin; // Left-aligned, same as stamp
-    const qrY = stampYPos + 35; // Below stamp box (stamp box is 30mm tall + 5mm spacing)
+    const qrX = totalBoxX; // Right-aligned, same as stamp and total box
+    const qrY = stampYPos + 37; // Below stamp box (stamp box is 30mm tall + 2mm line + 5mm spacing)
     
     doc.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
     
