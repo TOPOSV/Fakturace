@@ -94,7 +94,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     success: [number, number, number];
     text: [number, number, number];
   } = {
-    primary: [139, 0, 0],          // Dark Red #8B0000
+    primary: [180, 50, 50],        // Lighter Red #B43232 (was #8B0000)
     primaryLight: [220, 53, 69],   // Light Red #DC3545
     accent: [255, 152, 0],         // Vibrant Orange #FF9800 (kept)
     dark: [38, 50, 56],            // Dark Blue-Gray #263238
@@ -171,6 +171,9 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   const col2X = margin + (contentWidth / 2) + 10;
   const boxWidth = (contentWidth / 2) - 5;
   
+  // Track where supplier box will start
+  const supplierBoxStartY = yPos + 5; // Box starts 5mm below this position for padding
+  
   // ADD LOGO above supplier section if provided - positioned with proper aspect ratio
   if (userData.logo) {
     try {
@@ -201,15 +204,16 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
         logoWidth = logoHeight * aspectRatio;
       }
       
-      // Position logo above supplier box - moved 25mm lower (was -25, now 0)
-      const logoY = yPos; // Moved 25mm down (was yPos-25, now yPos+0)
+      // Position logo 10mm ABOVE supplier box
+      const logoY = supplierBoxStartY - logoHeight - 10;
       doc.addImage(userData.logo, 'PNG', col1X, logoY, logoWidth, logoHeight);
-      // Add space after logo so supplier box doesn't overlap
-      yPos += logoHeight + 5; // Dynamic spacing based on logo height
     } catch (error) {
       console.warn('Failed to add logo to PDF:', error);
     }
   }
+  
+  // Move yPos to where supplier box content starts (inside padding)
+  yPos = supplierBoxStartY;
   
   // DODAVATEL (levy sloupec) - Light blue box
   doc.setFillColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
@@ -267,12 +271,11 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   }
   
   const supplierEndY = yPos;
-  const supplierBoxStartY = yPos - 57; // Track where supplier box started
   
   // ODBERATEL (pravy sloupec) - Light teal box - starts at same Y as supplier box
-  yPos = supplierBoxStartY + 5; // Start at same position as supplier (inside box padding)
+  yPos = supplierBoxStartY; // Start at exactly same position as supplier
   doc.setFillColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
-  doc.roundedRect(col2X, supplierBoxStartY, boxWidth, 55, 2, 2, 'F');
+  doc.roundedRect(col2X, supplierBoxStartY - 5, boxWidth, 55, 2, 2, 'F');
   
   safeSetFont('bold');
   doc.setFontSize(11);
@@ -368,10 +371,10 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   
   // Right side
   let rightYPos = yPos;
-  if (invoice.variable_symbol) {
-    doc.text(`Variabilní symbol: ${invoice.variable_symbol}`, margin + 95, rightYPos);
-    rightYPos += 4;
-  }
+  // Add variable symbol with invoice number
+  doc.text(`Variabilní symbol: ${invoice.number}`, margin + 95, rightYPos);
+  rightYPos += 4;
+  
   if (invoice.constant_symbol) {
     doc.text(`Konstantní symbol: ${invoice.constant_symbol}`, margin + 95, rightYPos);
     rightYPos += 4;
@@ -554,18 +557,23 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   yPos = vatTableEndY + 10;
   
   // ============================================
-  // DOLNI CAST - ZAKONCENI s barevnym boxem
+  // CELKEM K UHRADE - Below stamp box
   // ============================================
-  const bottomY = 270; // Pozice v dolni casti stranky
+  const totalBoxY = stampYPos + 35; // Position below stamp box (stamp box is 30mm tall + 5mm spacing)
   
   // Final total box
   doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-  doc.roundedRect(margin, bottomY - 5, contentWidth, 10, 2, 2, 'F');
+  doc.roundedRect(margin, totalBoxY, 80, 10, 2, 2, 'F'); // Narrower box (80mm instead of full width)
   
-  doc.setFontSize(14);
+  doc.setFontSize(12);
   safeSetFont('bold');
   doc.setTextColor(255, 255, 255);
-  doc.text(`Celkem k úhradě: ${totalAmountFormatted}`, margin + 3, bottomY + 2);
+  doc.text(`Celkem k úhradě: ${totalAmountFormatted}`, margin + 3, totalBoxY + 7);
+  
+  // ============================================
+  // DOLNI CAST - ZAKONCENI
+  // ============================================
+  const bottomY = 270; // Pozice v dolni casti stranky
   
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   doc.setFontSize(8);
