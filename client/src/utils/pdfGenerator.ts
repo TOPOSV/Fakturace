@@ -434,13 +434,13 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
       fontSize: 9
     },
     columnStyles: {
-      0: { cellWidth: 50, halign: 'left' },     // Description: reduced from 60 to 50
-      1: { cellWidth: 18, halign: 'center' },   // Quantity: reduced from 20 to 18
-      2: { cellWidth: 22, halign: 'right' },    // Unit price: reduced from 25 to 22
-      3: { cellWidth: 15, halign: 'center' },   // VAT rate: kept at 15
-      4: { cellWidth: 22, halign: 'right' },    // Subtotal: reduced from 25 to 22
-      5: { cellWidth: 18, halign: 'right' },    // VAT: reduced from 20 to 18
-      6: { cellWidth: 25, halign: 'right', fontStyle: 'bold' }  // Total: kept at 25
+      0: { cellWidth: 50, halign: 'left' },     // Description
+      1: { cellWidth: 18, halign: 'center' },   // Quantity
+      2: { cellWidth: 25, halign: 'right', minCellWidth: 25 },    // Unit price - wider to prevent wrapping
+      3: { cellWidth: 15, halign: 'center' },   // VAT rate
+      4: { cellWidth: 25, halign: 'right', minCellWidth: 25 },    // Subtotal - wider to prevent wrapping
+      5: { cellWidth: 20, halign: 'right', minCellWidth: 20 },    // VAT - wider to prevent wrapping
+      6: { cellWidth: 27, halign: 'right', fontStyle: 'bold', minCellWidth: 27 }  // Total - wider to prevent wrapping
     },
     alternateRowStyles: {
       fillColor: colors.lightGray
@@ -484,7 +484,8 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
       lineColor: colors.mediumGray,
       lineWidth: 0.1,
       halign: 'right',
-      textColor: colors.text
+      textColor: colors.text,
+      minCellWidth: 30 // Ensure cells are wide enough to prevent wrapping
     },
     headStyles: {
       fillColor: colors.accent,
@@ -495,6 +496,11 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     bodyStyles: {
       fontStyle: 'bold',
       fontSize: 11
+    },
+    columnStyles: {
+      0: { minCellWidth: 30 }, // Základ
+      1: { minCellWidth: 30 }, // Výše DPH
+      2: { minCellWidth: 30 }  // Celkem
     },
     margin: { left: margin + 100, right: margin }
   });
@@ -605,10 +611,10 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
       }
     });
     
-    // Add QR code below the total box (right-aligned)
+    // Add QR code below the stamp box (left-aligned, under stamp)
     const qrSize = 35; // 35mm QR code
-    const qrX = totalBoxX + (totalBoxWidth - qrSize) / 2; // Center QR code in total box width
-    const qrY = totalBoxY + 12; // Below total box
+    const qrX = margin; // Left-aligned, same as stamp
+    const qrY = stampYPos + 35; // Below stamp box (stamp box is 30mm tall + 5mm spacing)
     
     doc.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
     
