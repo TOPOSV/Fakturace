@@ -40,7 +40,7 @@ export interface Invoice {
   user_id?: number;
   client_id: number;
   client_name?: string;
-  type: 'invoice' | 'proforma' | 'quote';
+  type: 'invoice' | 'received';
   number?: string;
   issue_date: string;
   due_date: string;

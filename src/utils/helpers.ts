@@ -47,6 +47,6 @@ export const calculateVAT = (amount: number, vatRate: number = 21): { subtotal: 
 };
 
 export const generateInvoiceNumber = (type: string, year: number, sequence: number): string => {
-  const prefix = type === 'invoice' ? 'FA' : type === 'proforma' ? 'ZF' : 'NB';
+  const prefix = type === 'invoice' ? 'VF' : type === 'received' ? 'PF' : 'FA';
   return `${prefix}${year}${String(sequence).padStart(4, '0')}`;
 };

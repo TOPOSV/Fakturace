@@ -40,9 +40,11 @@ export const getStatistics = (req: AuthRequest, res: Response) => {
         const month = new Date(invoice.issue_date).getMonth() + 1;
         const amount = includeVatBool ? invoice.total : (invoice.total - (invoice.vat_amount || 0));
 
-        if (invoice.type === 'invoice' || invoice.type === 'proforma') {
+        if (invoice.type === 'invoice') {
+          // Vydaná faktura = příjem (income)
           monthlyIncome[month] = (monthlyIncome[month] || 0) + amount;
-        } else {
+        } else if (invoice.type === 'received') {
+          // Přijatá faktura = výdaj (expense)
           monthlyExpenses[month] = (monthlyExpenses[month] || 0) + amount;
         }
       });
@@ -67,9 +69,11 @@ export const getStatistics = (req: AuthRequest, res: Response) => {
         const quarter = Math.ceil(month / 3);
         const amount = includeVatBool ? invoice.total : (invoice.total - (invoice.vat_amount || 0));
 
-        if (invoice.type === 'invoice' || invoice.type === 'proforma') {
+        if (invoice.type === 'invoice') {
+          // Vydaná faktura = příjem (income)
           quarterlyIncome[quarter] = (quarterlyIncome[quarter] || 0) + amount;
-        } else {
+        } else if (invoice.type === 'received') {
+          // Přijatá faktura = výdaj (expense)
           quarterlyExpenses[quarter] = (quarterlyExpenses[quarter] || 0) + amount;
         }
       });
@@ -110,9 +114,11 @@ export const getStatistics = (req: AuthRequest, res: Response) => {
           const invoiceYear = new Date(invoice.issue_date).getFullYear();
           const amount = includeVatBool ? invoice.total : (invoice.total - (invoice.vat_amount || 0));
 
-          if (invoice.type === 'invoice' || invoice.type === 'proforma') {
+          if (invoice.type === 'invoice') {
+            // Vydaná faktura = příjem (income)
             yearlyIncome[invoiceYear] = (yearlyIncome[invoiceYear] || 0) + amount;
-          } else {
+          } else if (invoice.type === 'received') {
+            // Přijatá faktura = výdaj (expense)
             yearlyExpenses[invoiceYear] = (yearlyExpenses[invoiceYear] || 0) + amount;
           }
         });

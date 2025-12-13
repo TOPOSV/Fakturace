@@ -256,9 +256,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice }
                 onChange={handleChange}
                 required
               >
-                <option value="invoice">Faktura</option>
-                <option value="proforma">Záloha</option>
-                <option value="quote">Nabídka</option>
+                <option value="invoice">Vydaná faktura</option>
+                <option value="received">Přijatá faktura</option>
               </select>
             </div>
           </div>

@@ -145,8 +145,8 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.setTextColor(255, 255, 255);
   
   // Czech text with proper diacritics
-  const typeText = invoice.type === 'invoice' ? 'Faktura - daňový doklad' : 
-                   invoice.type === 'proforma' ? 'Zálohová faktura' : 'Nabídka';
+  const typeText = invoice.type === 'invoice' ? 'Vydaná faktura - daňový doklad' : 
+                   invoice.type === 'received' ? 'Přijatá faktura - daňový doklad' : 'Faktura';
   doc.text(typeText, margin, 15);
   
   // Reset text color to dark

@@ -299,7 +299,7 @@ const InvoiceList: React.FC = () => {
                 <tr key={invoice.id}>
                   <td>{invoice.number}</td>
                   <td>{invoice.client_name}</td>
-                  <td>{invoice.type === 'invoice' ? 'Faktura' : invoice.type === 'proforma' ? 'Záloha' : 'Nabídka'}</td>
+                  <td>{invoice.type === 'invoice' ? 'Vydaná faktura' : invoice.type === 'received' ? 'Přijatá faktura' : invoice.type}</td>
                   <td>{new Date(invoice.issue_date).toLocaleDateString('cs-CZ')}</td>
                   <td>{new Date(invoice.due_date).toLocaleDateString('cs-CZ')}</td>
                   <td>{invoice.total?.toFixed(2)} {invoice.currency}</td>
