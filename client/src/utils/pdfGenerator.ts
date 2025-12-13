@@ -208,6 +208,9 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
       // Position logo 10mm ABOVE supplier box
       const logoY = supplierBoxStartY - logoHeight - 10;
       doc.addImage(userData.logo, 'PNG', col1X, logoY, logoWidth, logoHeight);
+      
+      // IMPORTANT: Re-set font after addImage() as jsPDF resets it to default
+      safeSetFont('normal');
     } catch (error) {
       console.warn('Failed to add logo to PDF:', error);
     }
@@ -550,6 +553,9 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
       // Position stamp 3mm from top of box (was 5mm)
       const stampY = stampYPos + 3;
       doc.addImage(userData.stamp, 'PNG', stampX, stampY, stampWidth, stampHeight);
+      
+      // IMPORTANT: Re-set font after addImage() as jsPDF resets it to default
+      safeSetFont('normal');
     } catch (error) {
       console.warn('Failed to add stamp to PDF:', error);
     }
@@ -605,6 +611,10 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     const qrY = totalBoxY + 12; // Below total box
     
     doc.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+    
+    // IMPORTANT: Re-set font after addImage() as jsPDF resets it to default
+    // This ensures Czech diacritics continue to work properly
+    safeSetFont('normal');
     
     // Add small text below QR code
     doc.setFontSize(7);
