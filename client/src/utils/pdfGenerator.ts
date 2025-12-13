@@ -83,7 +83,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     }
   };
   
-  // Color palette for professional look - Modern, vibrant colors
+  // Color palette for professional look - Dark Red & Light Red theme
   const colors: {
     primary: [number, number, number];
     primaryLight: [number, number, number];
@@ -94,14 +94,14 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     success: [number, number, number];
     text: [number, number, number];
   } = {
-    primary: [30, 136, 229],      // Professional Blue #1E88E5
-    primaryLight: [66, 165, 245],  // Light Blue #42A5F5
-    accent: [255, 152, 0],        // Vibrant Orange #FF9800
-    dark: [38, 50, 56],           // Dark Blue-Gray #263238
-    lightGray: [250, 250, 250],   // Very Light Gray #FAFAFA
-    mediumGray: [176, 190, 197],  // Blue-Gray #B0BEC5
-    success: [67, 160, 71],       // Professional Green #43A047
-    text: [55, 71, 79]            // Dark Blue-Gray #37474F
+    primary: [139, 0, 0],          // Dark Red #8B0000
+    primaryLight: [220, 53, 69],   // Light Red #DC3545
+    accent: [255, 152, 0],         // Vibrant Orange #FF9800 (kept)
+    dark: [38, 50, 56],            // Dark Blue-Gray #263238
+    lightGray: [250, 250, 250],    // Very Light Gray #FAFAFA
+    mediumGray: [176, 190, 197],   // Blue-Gray #B0BEC5
+    success: [67, 160, 71],        // Professional Green #43A047
+    text: [55, 71, 79]             // Dark Blue-Gray #37474F
   };
   
   // Set the loaded font (Roboto or Helvetica fallback) - must specify style!
@@ -166,7 +166,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ============================================
   // DVA BLOKY VEDLE SEBE - Dodavatel a Odberatel s barevnymi boxy
   // ============================================
-  let yPos = margin + 40; // Moved 5mm up (was 45)
+  let yPos = margin + 20; // Moved 20mm up (was 40)
   const col1X = margin;
   const col2X = margin + (contentWidth / 2) + 10;
   const boxWidth = (contentWidth / 2) - 5;
@@ -174,9 +174,9 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ADD LOGO above supplier section if provided - positioned with proper aspect ratio
   if (userData.logo) {
     try {
-      // Logo dimensions: Maintain aspect ratio, width limited to 40mm max, height auto-calculated
-      const maxLogoWidth = 40;
-      const maxLogoHeight = 15;
+      // Logo dimensions: Maintain aspect ratio, width limited to 50mm max, height auto-calculated
+      const maxLogoWidth = 50; // Increased from 40 to 50mm
+      const maxLogoHeight = 20; // Increased from 15 to 20mm
       
       // Load image properly to get dimensions
       const imgElement = new Image();
@@ -201,8 +201,8 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
         logoWidth = logoHeight * aspectRatio;
       }
       
-      // Position logo above supplier box (35mm above yPos)
-      const logoY = yPos - 35;
+      // Position logo above supplier box (25mm above yPos instead of 35mm)
+      const logoY = yPos - 25; // Moved 10mm down (was -35, now -25)
       doc.addImage(userData.logo, 'PNG', col1X, logoY, logoWidth, logoHeight);
       // Add space after logo so supplier box doesn't overlap
       yPos += 5;
@@ -269,7 +269,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   const supplierEndY = yPos;
   
   // ODBERATEL (pravy sloupec) - Light teal box
-  yPos = margin + 45;
+  yPos = margin + 25; // Adjusted to match supplier (was +45, now +25 to move 20mm up)
   doc.setFillColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
   doc.roundedRect(col2X, yPos - 5, boxWidth, 55, 2, 2, 'F');
   
@@ -311,7 +311,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ============================================
   // TRI DATUMY V JEDNE RADCE s barevnym pozadim
   // ============================================
-  yPos = Math.max(supplierEndY, yPos) + 12;
+  yPos = Math.max(supplierEndY, yPos) + 12 - 20; // Moved 20mm up by subtracting 20
   
   // Date boxes with light background
   doc.setFillColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
@@ -336,7 +336,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ============================================
   // BANKOVNI UDAJE v barevnem boxu
   // ============================================
-  yPos += 18;
+  yPos += 18 - 20; // Moved 20mm up by subtracting 20 (net: -2mm from previous position)
   
   // Banking info box with light background
   doc.setFillColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
@@ -381,27 +381,10 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   yPos = Math.max(bankYPos, rightYPos) + 5;
   
   // ============================================
-  // VELKY ZVYRAZNENY TEXT - K UHRADE s barevnym boxem
-  // ============================================
-  yPos += 5;
-  
-  // Prominent total amount box
-  doc.setFillColor(colors.success[0], colors.success[1], colors.success[2]);
-  doc.roundedRect(margin, yPos, contentWidth, 12, 2, 2, 'F');
-  
-  doc.setFontSize(16);
-  safeSetFont('bold');
-  doc.setTextColor(255, 255, 255);
-  const totalAmount = finalTotal.toFixed(2).replace('.', ',');
-  const totalText = `K úhradě: ${totalAmount} Kč`;
-  doc.text(totalText, margin + 3, yPos + 8);
-  
-  doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
-  
-  // ============================================
   // TABULKA POLOZEK (jspdf-autotable) s lepsimi barvami
+  // Removed "K úhradě" banner - items table moves up directly
   // ============================================
-  yPos += 15;
+  yPos += 5; // Small spacing after banking info
   
   const tableData = invoice.items.map(item => {
     const qty = item.quantity || 0;
@@ -523,17 +506,17 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // Move text to the left (was pageWidth - margin - 85)
   doc.text('Razítko a podpis:', margin, stampYPos);
   
-  // Signature box - positioned on left side, moved down
+  // Signature box - SMALLER: positioned on left side, moved down
   doc.setDrawColor(colors.mediumGray[0], colors.mediumGray[1], colors.mediumGray[2]);
   doc.setLineWidth(0.3);
-  doc.rect(margin, stampYPos + 2, 80, 35);
+  doc.rect(margin, stampYPos + 2, 65, 30); // Reduced from 80x35 to 65x30
   
-  // ADD STAMP inside the signature box if provided - with proper aspect ratio
+  // ADD STAMP inside the signature box if provided - LARGER dimensions with proper aspect ratio
   if (userData.stamp) {
     try {
-      // Stamp dimensions: Maintain aspect ratio, max 35x30mm
-      const maxStampWidth = 35;
-      const maxStampHeight = 30;
+      // Stamp dimensions: INCREASED - Maintain aspect ratio, max 45x25mm (was 35x30)
+      const maxStampWidth = 45; // Increased from 35 to 45mm
+      const maxStampHeight = 25; // Reduced from 30 to 25mm (box is shorter now)
       
       // Load image properly to get dimensions
       const stampImgElement = new Image();
@@ -559,8 +542,8 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
       }
       
       const stampX = margin + 5;
-      // Position stamp 5mm from top of box
-      const stampY = stampYPos + 5;
+      // Position stamp 3mm from top of box (was 5mm)
+      const stampY = stampYPos + 3;
       doc.addImage(userData.stamp, 'PNG', stampX, stampY, stampWidth, stampHeight);
     } catch (error) {
       console.warn('Failed to add stamp to PDF:', error);
