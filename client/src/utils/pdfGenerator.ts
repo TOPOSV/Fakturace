@@ -166,7 +166,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ============================================
   // DVA BLOKY VEDLE SEBE - Dodavatel a Odberatel s barevnymi boxy
   // ============================================
-  let yPos = margin + 20; // Moved 20mm up (was 40)
+  let yPos = margin + 25; // Moved 5mm lower (was +20, now +25)
   const col1X = margin;
   const col2X = margin + (contentWidth / 2) + 10;
   const boxWidth = (contentWidth / 2) - 5;
@@ -201,11 +201,11 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
         logoWidth = logoHeight * aspectRatio;
       }
       
-      // Position logo above supplier box (25mm above yPos instead of 35mm)
-      const logoY = yPos - 25; // Moved 10mm down (was -35, now -25)
+      // Position logo above supplier box - moved 25mm lower (was -25, now 0)
+      const logoY = yPos; // Moved 25mm down (was yPos-25, now yPos+0)
       doc.addImage(userData.logo, 'PNG', col1X, logoY, logoWidth, logoHeight);
       // Add space after logo so supplier box doesn't overlap
-      yPos += 5;
+      yPos += logoHeight + 5; // Dynamic spacing based on logo height
     } catch (error) {
       console.warn('Failed to add logo to PDF:', error);
     }
@@ -267,11 +267,12 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   }
   
   const supplierEndY = yPos;
+  const supplierBoxStartY = yPos - 57; // Track where supplier box started
   
-  // ODBERATEL (pravy sloupec) - Light teal box
-  yPos = margin + 25; // Adjusted to match supplier (was +45, now +25 to move 20mm up)
+  // ODBERATEL (pravy sloupec) - Light teal box - starts at same Y as supplier box
+  yPos = supplierBoxStartY + 5; // Start at same position as supplier (inside box padding)
   doc.setFillColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
-  doc.roundedRect(col2X, yPos - 5, boxWidth, 55, 2, 2, 'F');
+  doc.roundedRect(col2X, supplierBoxStartY, boxWidth, 55, 2, 2, 'F');
   
   safeSetFont('bold');
   doc.setFontSize(11);
@@ -309,9 +310,9 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   }
   
   // ============================================
-  // TRI DATUMY V JEDNE RADCE s barevnym pozadim
+  // TRI DATUMY V JEDNE RADCE s barevnym pozadim - BELOW supplier section
   // ============================================
-  yPos = Math.max(supplierEndY, yPos) + 12 - 20; // Moved 20mm up by subtracting 20
+  yPos = Math.max(supplierEndY, yPos) + 12; // Position below both supplier and client boxes
   
   // Date boxes with light background
   doc.setFillColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
@@ -334,9 +335,9 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.text(new Date(invoice.due_date).toLocaleDateString('cs-CZ'), margin + 118, yPos + 9);
   
   // ============================================
-  // BANKOVNI UDAJE v barevnem boxu
+  // BANKOVNI UDAJE v barevnem boxu - BELOW dates
   // ============================================
-  yPos += 18 - 20; // Moved 20mm up by subtracting 20 (net: -2mm from previous position)
+  yPos += 18; // Position below dates
   
   // Banking info box with light background
   doc.setFillColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
