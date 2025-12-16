@@ -498,3 +498,76 @@
 [data-theme="dark"] .loading {
   color: var(--text-secondary) !important;
 }
+
+/* Custom Dialog Dark Mode */
+[data-theme="dark"] .custom-dialog-overlay {
+  background: rgba(0, 0, 0, 0.8) !important;
+}
+
+[data-theme="dark"] .custom-dialog {
+  background: var(--card-bg) !important;
+}
+
+[data-theme="dark"] .custom-dialog-header {
+  border-bottom: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .custom-dialog-body {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .custom-dialog-footer {
+  border-top: 1px solid var(--border-color) !important;
+}
+
+[data-theme="dark"] .custom-dialog-btn-cancel {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .custom-dialog-btn-cancel:hover {
+  background: var(--bg-hover) !important;
+}
+
+[data-theme="dark"] .custom-dialog-btn-confirm {
+  background: var(--primary-color) !important;
+  color: white !important;
+}
+
+[data-theme="dark"] .custom-dialog-btn-confirm:hover {
+  background: #5568d3 !important;
+}
+
+/* Client Search Input Dark Mode */
+[data-theme="dark"] .page-container input[type="text"][placeholder*="Vyhledat"] {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .page-container input[type="text"][placeholder*="Vyhledat"]::placeholder {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .page-container input[type="text"][placeholder*="Vyhledat"]:focus {
+  border-color: var(--primary-color) !important;
+}
+
+/* Client Form - Vyhledat Button Dark Mode */
+[data-theme="dark"] .btn-secondary {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+  background-color: var(--bg-hover) !important;
+  border-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .btn-secondary:disabled {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-secondary) !important;
+  opacity: 0.5;
+}
