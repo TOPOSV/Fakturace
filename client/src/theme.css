@@ -204,16 +204,29 @@
 }
 
 /* VAT summary section (#f5f5f5 background) - Dark mode */
+/* Note: React converts hex colors to rgb(), so we need both formats */
 [data-theme="dark"] div[style*="background: #f5f5f5"],
-[data-theme="dark"] div[style*="background:#f5f5f5"] {
+[data-theme="dark"] div[style*="background:#f5f5f5"],
+[data-theme="dark"] div[style*="background: rgb(245, 245, 245)"],
+[data-theme="dark"] div[style*="background:rgb(245, 245, 245)"],
+[data-theme="dark"] div[style*="background: rgb(245,245,245)"],
+[data-theme="dark"] div[style*="background:rgb(245,245,245)"] {
   background: var(--bg-tertiary) !important;
   border: 1px solid var(--border-color) !important;
 }
 
 [data-theme="dark"] div[style*="background: #f5f5f5"] span,
 [data-theme="dark"] div[style*="background:#f5f5f5"] span,
+[data-theme="dark"] div[style*="background: rgb(245, 245, 245)"] span,
+[data-theme="dark"] div[style*="background:rgb(245, 245, 245)"] span,
+[data-theme="dark"] div[style*="background: rgb(245,245,245)"] span,
+[data-theme="dark"] div[style*="background:rgb(245,245,245)"] span,
 [data-theme="dark"] div[style*="background: #f5f5f5"] strong,
-[data-theme="dark"] div[style*="background:#f5f5f5"] strong {
+[data-theme="dark"] div[style*="background:#f5f5f5"] strong,
+[data-theme="dark"] div[style*="background: rgb(245, 245, 245)"] strong,
+[data-theme="dark"] div[style*="background:rgb(245, 245, 245)"] strong,
+[data-theme="dark"] div[style*="background: rgb(245,245,245)"] strong,
+[data-theme="dark"] div[style*="background:rgb(245,245,245)"] strong {
   color: var(--text-primary) !important;
 }
 
