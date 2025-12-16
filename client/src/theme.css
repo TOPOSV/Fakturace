@@ -128,6 +128,10 @@
 }
 
 /* Modals and Overlays */
+[data-theme="dark"] .modal-overlay {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
 [data-theme="dark"] .modal-content,
 [data-theme="dark"] .modal,
 [data-theme="dark"] .custom-dialog {
@@ -148,6 +152,32 @@
 
 [data-theme="dark"] .custom-dialog-body {
   color: var(--text-secondary) !important;
+}
+
+/* Form Actions and Buttons */
+[data-theme="dark"] .form-actions {
+  background-color: transparent;
+  border-top: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .form-actions .btn-primary,
+[data-theme="dark"] .btn-primary {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+  border: none;
+}
+
+[data-theme="dark"] .form-actions .btn-primary:hover,
+[data-theme="dark"] .btn-primary:hover {
+  background-color: #5558dd !important;
+  opacity: 0.9;
+}
+
+[data-theme="dark"] .form-actions .btn-primary:disabled,
+[data-theme="dark"] .btn-primary:disabled {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-secondary) !important;
+  opacity: 0.6;
 }
 
 /* Dashboard Specific */
