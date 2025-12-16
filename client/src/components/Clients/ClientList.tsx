@@ -23,9 +23,26 @@ const ClientList: React.FC = () => {
     }
   };
 
-  const handleEdit = (client: any) => {
+  const handleEdit = (client: any, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
+    }
     setEditingClient(client);
     setShowForm(true);
+  };
+
+  const handleDelete = async (client: any, event: React.MouseEvent) => {
+    event.stopPropagation();
+    
+    if (window.confirm(`Opravdu chcete smazat klienta "${client.company_name}"?`)) {
+      try {
+        await clientService.delete(client.id);
+        loadClients();
+      } catch (error) {
+        console.error('Failed to delete client:', error);
+        alert('Nepodařilo se smazat klienta');
+      }
+    }
   };
 
   const handleCloseForm = () => {
@@ -54,17 +71,52 @@ const ClientList: React.FC = () => {
             <th>Město</th>
             <th>Email</th>
             <th>Telefon</th>
+            <th style={{ width: '100px', textAlign: 'center' }}>Akce</th>
           </tr>
         </thead>
         <tbody>
           {clients.map((client) => (
-            <tr key={client.id} onClick={() => handleEdit(client)} style={{ cursor: 'pointer' }}>
+            <tr key={client.id}>
               <td>{client.company_name}</td>
               <td>{client.ico}</td>
               <td>{client.dic}</td>
               <td>{client.city}</td>
               <td>{client.email}</td>
               <td>{client.phone}</td>
+              <td style={{ textAlign: 'center' }}>
+                <div style={{ display: 'flex', gap: '5px', justifyContent: 'center' }}>
+                  <button
+                    onClick={(e) => handleEdit(client, e)}
+                    style={{
+                      padding: '5px 10px',
+                      background: '#6366f1',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                    title="Upravit"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    onClick={(e) => handleDelete(client, e)}
+                    style={{
+                      padding: '5px 10px',
+                      background: '#dc3545',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                    title="Smazat"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

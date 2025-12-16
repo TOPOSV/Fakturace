@@ -203,6 +203,20 @@
   color: var(--text-primary) !important;
 }
 
+/* VAT summary section (#f5f5f5 background) - Dark mode */
+[data-theme="dark"] div[style*="background: #f5f5f5"],
+[data-theme="dark"] div[style*="background:#f5f5f5"] {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+[data-theme="dark"] div[style*="background: #f5f5f5"] span,
+[data-theme="dark"] div[style*="background:#f5f5f5"] span,
+[data-theme="dark"] div[style*="background: #f5f5f5"] strong,
+[data-theme="dark"] div[style*="background:#f5f5f5"] strong {
+  color: var(--text-primary) !important;
+}
+
 /* Form Actions and Buttons */
 [data-theme="dark"] .form-actions {
   background-color: transparent;
