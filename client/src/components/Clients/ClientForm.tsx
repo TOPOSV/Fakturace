@@ -19,13 +19,18 @@ const ClientForm: React.FC<ClientFormProps> = ({ onClose, onSuccess, client }) =
     country: client?.country || 'Česká republika',
     email: client?.email || '',
     phone: client?.phone || '',
+    is_vat_payer: client?.is_vat_payer !== undefined ? Boolean(client.is_vat_payer) : true,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lookingUp, setLookingUp] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, type, checked, value } = e.target;
+    setFormData({ 
+      ...formData, 
+      [name]: type === 'checkbox' ? checked : value 
+    });
   };
 
   const handleICOLookup = async () => {
@@ -179,6 +184,21 @@ const ClientForm: React.FC<ClientFormProps> = ({ onClose, onSuccess, client }) =
                 onChange={handleChange}
                 placeholder="+420 123 456 789"
               />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                name="is_vat_payer"
+                checked={formData.is_vat_payer}
+                onChange={handleChange}
+              />
+              <span>Plátce DPH</span>
+            </label>
+            <div className="help-text">
+              Pokud je klient plátcem DPH, bude DPH zobrazeno na faktuře. V opačném případě bude faktura bez DPH.
             </div>
           </div>
 

@@ -23,6 +23,7 @@ interface InvoiceData {
   client_zip?: string;
   client_ico?: string;
   client_dic?: string;
+  client_is_vat_payer?: boolean;
   subtotal: number;
   vat: number;
   total: number;
@@ -117,6 +118,9 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // Set the loaded font (Roboto or Helvetica fallback) - must specify style!
   safeSetFont('normal');
   
+  // Check if client is VAT payer (default to true if not specified)
+  const isVatPayer = invoice.client_is_vat_payer !== undefined ? invoice.client_is_vat_payer : true;
+  
   // ============================================
   // CALCULATE TOTALS FROM ITEMS (for accurate display throughout PDF)
   // ============================================
@@ -127,7 +131,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   invoice.items.forEach(item => {
     const qty = item.quantity || 0;
     const unitPrice = item.unit_price || 0;
-    const vatRate = item.vat_rate || 21;
+    const vatRate = isVatPayer ? (item.vat_rate || 21) : 0; // No VAT if not VAT payer
     const subtotal = unitPrice * qty;
     const vatAmount = subtotal * (vatRate / 100);
     
@@ -138,7 +142,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   
   // Use calculated values if available, otherwise fall back to invoice values
   const finalSubtotal = calculatedSubtotal > 0 ? calculatedSubtotal : (invoice.subtotal || 0);
-  const finalVat = calculatedVat > 0 ? calculatedVat : (invoice.vat || 0);
+  const finalVat = isVatPayer ? (calculatedVat > 0 ? calculatedVat : (invoice.vat || 0)) : 0;
   const finalTotal = calculatedTotal > 0 ? calculatedTotal : (invoice.total || 0);
   
   // ============================================
@@ -406,25 +410,54 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   const tableData = invoice.items.map(item => {
     const qty = item.quantity || 0;
     const unitPrice = item.unit_price || 0;
-    const vatRate = item.vat_rate || 21;
+    const vatRate = isVatPayer ? (item.vat_rate || 21) : 0;
     const subtotal = unitPrice * qty;
     const vatAmount = subtotal * (vatRate / 100);
     const total = subtotal + vatAmount;
     
-    return [
-      item.description || '',
-      qty.toString(),
-      formatCzechNumber(unitPrice), // Czech format with space separator
-      `${vatRate} %`,
-      formatCzechNumber(subtotal), // Czech format with space separator
-      formatCzechNumber(vatAmount), // Czech format with space separator
-      formatCzechNumber(total) // Czech format with space separator
-    ];
+    if (isVatPayer) {
+      return [
+        item.description || '',
+        qty.toString(),
+        formatCzechNumber(unitPrice), // Czech format with space separator
+        `${vatRate} %`,
+        formatCzechNumber(subtotal), // Czech format with space separator
+        formatCzechNumber(vatAmount), // Czech format with space separator
+        formatCzechNumber(total) // Czech format with space separator
+      ];
+    } else {
+      // No VAT columns for non-VAT payers
+      return [
+        item.description || '',
+        qty.toString(),
+        formatCzechNumber(unitPrice), // Czech format with space separator
+        formatCzechNumber(total) // Czech format with space separator (total = subtotal when no VAT)
+      ];
+    }
   });
+  
+  const tableHeaders = isVatPayer 
+    ? [['Označení dodávky', 'Počet', 'Cena/j.', 'DPH %', 'Bez DPH', 'DPH', 'Celkem']]
+    : [['Označení dodávky', 'Počet', 'Cena/j.', 'Celkem']];
+  
+  const columnStyles = isVatPayer ? {
+    0: { cellWidth: 50, halign: 'left' },     // Description
+    1: { cellWidth: 18, halign: 'center' },   // Quantity
+    2: { cellWidth: 25, halign: 'right', minCellWidth: 25 },    // Unit price
+    3: { cellWidth: 15, halign: 'center' },   // VAT rate
+    4: { cellWidth: 25, halign: 'right', minCellWidth: 25 },    // Subtotal
+    5: { cellWidth: 20, halign: 'right', minCellWidth: 20 },    // VAT
+    6: { cellWidth: 27, halign: 'right', fontStyle: 'bold', minCellWidth: 27 }  // Total
+  } : {
+    0: { cellWidth: 90, halign: 'left' },     // Description (wider when no VAT columns)
+    1: { cellWidth: 20, halign: 'center' },   // Quantity
+    2: { cellWidth: 35, halign: 'right', minCellWidth: 35 },    // Unit price
+    3: { cellWidth: 35, halign: 'right', fontStyle: 'bold', minCellWidth: 35 }  // Total
+  };
   
   autoTable(doc, {
     startY: yPos,
-    head: [['Označení dodávky', 'Počet', 'Cena/j.', 'DPH %', 'Bez DPH', 'DPH', 'Celkem']],
+    head: tableHeaders,
     body: tableData,
     theme: 'grid',
     styles: {
@@ -442,15 +475,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
       halign: 'center',
       fontSize: 9
     },
-    columnStyles: {
-      0: { cellWidth: 50, halign: 'left' },     // Description
-      1: { cellWidth: 18, halign: 'center' },   // Quantity
-      2: { cellWidth: 25, halign: 'right', minCellWidth: 25 },    // Unit price - wider to prevent wrapping
-      3: { cellWidth: 15, halign: 'center' },   // VAT rate
-      4: { cellWidth: 25, halign: 'right', minCellWidth: 25 },    // Subtotal - wider to prevent wrapping
-      5: { cellWidth: 20, halign: 'right', minCellWidth: 20 },    // VAT - wider to prevent wrapping
-      6: { cellWidth: 27, halign: 'right', fontStyle: 'bold', minCellWidth: 27 }  // Total - wider to prevent wrapping
-    },
+    columnStyles: columnStyles,
     alternateRowStyles: {
       fillColor: colors.lightGray
     },
@@ -476,57 +501,61 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   
   // ============================================
   // SOUHRNNA TABULKA DPH s barvami - Using precalculated values
+  // Only show if client is VAT payer
   // ============================================
-  const subtotalAmount = `${formatCzechNumber(finalSubtotal)} Kč`;
-  const vatAmount = `${formatCzechNumber(finalVat)} Kč`;
-  const totalAmountFormatted = `${formatCzechNumber(finalTotal)} Kč`;
-  
-  autoTable(doc, {
-    startY: yPos,
-    head: [['Základ', 'Výše DPH', 'Celkem']],
-    body: [[subtotalAmount, vatAmount, totalAmountFormatted]],
-    theme: 'grid',
-    styles: {
-      font: fontName,
-      fontSize: 10,
-      cellPadding: 3,
-      lineColor: colors.mediumGray,
-      lineWidth: 0.1,
-      halign: 'right',
-      textColor: colors.text,
-      minCellWidth: 40, // Increased from 30 to 40 to prevent "Kč" wrapping
-      cellWidth: 'wrap',
-      overflow: 'linebreak'
-    },
-    headStyles: {
-      fillColor: colors.accent,
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      halign: 'center'
-    },
-    bodyStyles: {
-      fontStyle: 'bold',
-      fontSize: 11,
-      minCellHeight: 8
-    },
-    columnStyles: {
-      0: { minCellWidth: 40, cellWidth: 'auto' }, // Základ
-      1: { minCellWidth: 40, cellWidth: 'auto' }, // Výše DPH
-      2: { minCellWidth: 40, cellWidth: 'auto' }  // Celkem
-    },
-    // Align table to match items table end position
-    margin: { left: pageWidth - margin - 130, right: margin }
-  });
-  
-  // @ts-ignore
-  const vatTableEndY = doc.lastAutoTable.finalY;
+  if (isVatPayer) {
+    const subtotalAmount = `${formatCzechNumber(finalSubtotal)} Kč`;
+    const vatAmount = `${formatCzechNumber(finalVat)} Kč`;
+    const totalAmountFormatted = `${formatCzechNumber(finalTotal)} Kč`;
+    
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Základ', 'Výše DPH', 'Celkem']],
+      body: [[subtotalAmount, vatAmount, totalAmountFormatted]],
+      theme: 'grid',
+      styles: {
+        font: fontName,
+        fontSize: 10,
+        cellPadding: 3,
+        lineColor: colors.mediumGray,
+        lineWidth: 0.1,
+        halign: 'right',
+        textColor: colors.text,
+        minCellWidth: 40, // Increased from 30 to 40 to prevent "Kč" wrapping
+        cellWidth: 'wrap',
+        overflow: 'linebreak'
+      },
+      headStyles: {
+        fillColor: colors.accent,
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      bodyStyles: {
+        fontStyle: 'bold',
+        fontSize: 11,
+        minCellHeight: 8
+      },
+      columnStyles: {
+        0: { minCellWidth: 40, cellWidth: 'auto' }, // Základ
+        1: { minCellWidth: 40, cellWidth: 'auto' }, // Výše DPH
+        2: { minCellWidth: 40, cellWidth: 'auto' }  // Celkem
+      },
+      // Align table to match items table end position
+      margin: { left: pageWidth - margin - 130, right: margin }
+    });
+    
+    // @ts-ignore
+    yPos = doc.lastAutoTable.finalY;
+  }
   
   // ============================================
-  // CELKEM K UHRADE - Below VAT table - RIGHT ALIGNED
+  // CELKEM K UHRADE - Below VAT table (or items table if no VAT) - RIGHT ALIGNED
   // ============================================
-  const totalBoxY = vatTableEndY + 5; // Position below VAT table
+  const totalBoxY = yPos + 5; // Position below VAT table or items table
   const totalBoxWidth = 80; // Width of the box
   const totalBoxX = pageWidth - margin - totalBoxWidth; // Right-aligned
+  const totalAmountFormatted = `${formatCzechNumber(finalTotal)} Kč`;
   
   // Final total box - RIGHT ALIGNED
   doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);

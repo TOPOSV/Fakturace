@@ -29,18 +29,20 @@ export const getClient = (req: AuthRequest, res: Response) => {
 };
 
 export const createClient = (req: AuthRequest, res: Response) => {
-  const { company_name, ico, dic, address, city, zip, country, email, phone } = req.body;
+  const { company_name, ico, dic, address, city, zip, country, email, phone, is_vat_payer } = req.body;
 
   if (!company_name) {
     return res.status(400).json({ error: 'Company name is required' });
   }
 
   const sql = `
-    INSERT INTO clients (user_id, company_name, ico, dic, address, city, zip, country, email, phone)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO clients (user_id, company_name, ico, dic, address, city, zip, country, email, phone, is_vat_payer)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-  db.run(sql, [req.userId, company_name, ico, dic, address, city, zip, country, email, phone], function (err) {
+  const vatPayer = is_vat_payer !== undefined ? (is_vat_payer ? 1 : 0) : 1;
+
+  db.run(sql, [req.userId, company_name, ico, dic, address, city, zip, country, email, phone, vatPayer], function (err) {
     if (err) {
       return res.status(500).json({ error: 'Failed to create client' });
     }
@@ -50,15 +52,17 @@ export const createClient = (req: AuthRequest, res: Response) => {
 
 export const updateClient = (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const { company_name, ico, dic, address, city, zip, country, email, phone } = req.body;
+  const { company_name, ico, dic, address, city, zip, country, email, phone, is_vat_payer } = req.body;
 
   const sql = `
     UPDATE clients 
-    SET company_name = ?, ico = ?, dic = ?, address = ?, city = ?, zip = ?, country = ?, email = ?, phone = ?
+    SET company_name = ?, ico = ?, dic = ?, address = ?, city = ?, zip = ?, country = ?, email = ?, phone = ?, is_vat_payer = ?
     WHERE id = ? AND user_id = ?
   `;
 
-  db.run(sql, [company_name, ico, dic, address, city, zip, country, email, phone, id, req.userId], function (err) {
+  const vatPayer = is_vat_payer !== undefined ? (is_vat_payer ? 1 : 0) : 1;
+
+  db.run(sql, [company_name, ico, dic, address, city, zip, country, email, phone, vatPayer, id, req.userId], function (err) {
     if (err) {
       return res.status(500).json({ error: 'Failed to update client' });
     }

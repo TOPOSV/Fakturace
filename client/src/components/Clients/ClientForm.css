@@ -151,3 +151,30 @@ textarea {
   min-height: 100px;
   resize: vertical;
 }
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #555;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.checkbox-label span {
+  user-select: none;
+}
+
+.help-text {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #777;
+  font-style: italic;
+}
