@@ -78,15 +78,17 @@ export const getProfile = (req: AuthRequest, res: Response) => {
 };
 
 export const updateProfile = (req: AuthRequest, res: Response) => {
-  const { company_name, ico, dic, address, city, zip, phone, bank_account, iban, logo, stamp, invoice_numbering_format } = req.body;
+  const { company_name, ico, dic, address, city, zip, phone, bank_account, iban, logo, stamp, invoice_numbering_format, is_vat_payer } = req.body;
+
+  const vatPayer = is_vat_payer !== undefined ? (is_vat_payer ? 1 : 0) : 1;
 
   const sql = `
     UPDATE users 
-    SET company_name = ?, ico = ?, dic = ?, address = ?, city = ?, zip = ?, phone = ?, bank_account = ?, iban = ?, logo = ?, stamp = ?, invoice_numbering_format = ?
+    SET company_name = ?, ico = ?, dic = ?, address = ?, city = ?, zip = ?, phone = ?, bank_account = ?, iban = ?, logo = ?, stamp = ?, invoice_numbering_format = ?, is_vat_payer = ?
     WHERE id = ?
   `;
 
-  db.run(sql, [company_name, ico, dic, address, city, zip, phone, bank_account, iban, logo, stamp, invoice_numbering_format, req.userId], (err) => {
+  db.run(sql, [company_name, ico, dic, address, city, zip, phone, bank_account, iban, logo, stamp, invoice_numbering_format, vatPayer, req.userId], (err) => {
     if (err) {
       return res.status(500).json({ error: 'Failed to update profile' });
     }

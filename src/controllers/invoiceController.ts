@@ -38,9 +38,10 @@ export const getInvoice = (req: AuthRequest, res: Response) => {
 
   db.get(
     `SELECT i.*, c.company_name as client_name, c.address as client_address, 
-     c.city as client_city, c.zip as client_zip, c.ico as client_ico, c.dic as client_dic, c.is_vat_payer as client_is_vat_payer
+     c.city as client_city, c.zip as client_zip, c.ico as client_ico, c.dic as client_dic, u.is_vat_payer as client_is_vat_payer
      FROM invoices i 
      LEFT JOIN clients c ON i.client_id = c.id 
+     LEFT JOIN users u ON i.user_id = u.id
      WHERE i.id = ? AND i.user_id = ?`,
     [id, req.userId],
     (err, invoice: any) => {

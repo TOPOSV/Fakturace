@@ -17,6 +17,7 @@ interface SettingsFormData {
   logo: string | null;
   stamp: string | null;
   invoice_numbering_format: string;
+  is_vat_payer: boolean;
 }
 
 const Settings: React.FC = () => {
@@ -35,6 +36,7 @@ const Settings: React.FC = () => {
     logo: null,
     stamp: null,
     invoice_numbering_format: 'year_4',
+    is_vat_payer: true,
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -61,6 +63,7 @@ const Settings: React.FC = () => {
         logo: response.data.logo || null,
         stamp: response.data.stamp || null,
         invoice_numbering_format: response.data.invoice_numbering_format || 'year_4',
+        is_vat_payer: response.data.is_vat_payer !== undefined ? Boolean(response.data.is_vat_payer) : true,
       });
       if (response.data.logo) {
         setLogoPreview(response.data.logo);
@@ -75,9 +78,11 @@ const Settings: React.FC = () => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, type } = e.target;
+    const value = type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
   };
 
@@ -258,6 +263,24 @@ const Settings: React.FC = () => {
                 <option value="year_5">Rok + 5 čísel (např. 202500001)</option>
               </select>
               <small>Čísla faktur budou použita jako variabilní symbol (bez písmen VF/PF)</small>
+            </div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h2>💼 Nastavení DPH</h2>
+          <div className="form-grid">
+            <div className="form-group full-width">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  name="is_vat_payer"
+                  checked={formData.is_vat_payer}
+                  onChange={handleChange}
+                />
+                <span>Jsem plátce DPH</span>
+              </label>
+              <small>Pokud jste plátce DPH, bude DPH zobrazeno na všech fakturách. V opačném případě budou faktury bez DPH.</small>
             </div>
           </div>
         </div>
