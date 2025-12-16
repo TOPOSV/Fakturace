@@ -1,0 +1,333 @@
+.page-container {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.page-header h1 {
+  margin: 0;
+  color: #333;
+}
+
+.quick-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.quick-filter-btn {
+  padding: 10px 20px;
+  background: #f0f0f0;
+  color: #333;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.quick-filter-btn:hover {
+  background: #e0e0e0;
+}
+
+.quick-filter-btn.active {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+.table-footer {
+  margin-top: 15px;
+}
+
+.table-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.data-table tbody tr {
+  height: 55px;
+  transition: background-color 0.2s;
+}
+
+.data-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.data-table td {
+  vertical-align: middle;
+  height: 55px;
+  padding: 10px 12px;
+  white-space: nowrap;
+}
+
+.data-table th {
+  white-space: nowrap;
+  padding: 12px;
+}
+
+/* Specific column widths for better layout */
+.data-table th:nth-child(1),
+.data-table td:nth-child(1) {
+  min-width: 100px; /* Číslo */
+}
+
+.data-table th:nth-child(2),
+.data-table td:nth-child(2) {
+  min-width: 180px; /* Klient */
+  max-width: 250px;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.data-table th:nth-child(3),
+.data-table td:nth-child(3) {
+  min-width: 80px; /* Typ */
+}
+
+.data-table th:nth-child(4),
+.data-table td:nth-child(4) {
+  min-width: 120px; /* Datum vystavení */
+}
+
+.data-table th:nth-child(5),
+.data-table td:nth-child(5) {
+  min-width: 120px; /* Splatnost */
+}
+
+.data-table th:nth-child(6),
+.data-table td:nth-child(6) {
+  min-width: 100px; /* Částka */
+  text-align: right;
+}
+
+.data-table th:nth-child(7),
+.data-table td:nth-child(7) {
+  min-width: 100px; /* Bez DPH */
+  text-align: right;
+}
+
+.data-table th:nth-child(8),
+.data-table td:nth-child(8) {
+  min-width: 120px; /* Stav */
+}
+
+.data-table th:nth-child(9),
+.data-table td:nth-child(9) {
+  min-width: 200px; /* Akce - increased for copy button */
+  text-align: center;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  align-items: center;
+  height: 55px;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 3px;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.action-btn:hover {
+  transform: scale(1.2);
+}
+
+.action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.action-btn:disabled:hover {
+  transform: none;
+}
+
+.pay-btn:hover {
+  background: #e8f5e9;
+}
+
+.edit-btn:hover {
+  background: #e3f2fd;
+}
+
+.copy-btn:hover {
+  background: #f3e5f5;
+}
+
+.pdf-btn:hover {
+  background: #fff3e0;
+}
+
+.delete-btn:hover {
+  background: #ffebee;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+}
+
+.pagination-btn {
+  padding: 8px 16px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.pagination-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-weight: 500;
+  color: #555;
+}
+
+.status-badge {
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.draft {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.status-badge.sent {
+  background: #bbdefb;
+  color: #1976d2;
+}
+
+.status-badge.paid {
+  background: #c8e6c9;
+  color: #388e3c;
+}
+
+.status-badge.unpaid {
+  background: #ffcdd2;
+  color: #c62828;
+}
+
+.status-badge.overdue {
+  background: #ffcdd2;
+  color: #c62828;
+}
+
+.status-badge.cancelled {
+  background: #f5f5f5;
+  color: #9e9e9e;
+}
+
+.custom-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.custom-dialog {
+  background: white;
+  border-radius: 10px;
+  padding: 0;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.custom-dialog-header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.custom-dialog-body {
+  padding: 30px 20px;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.custom-dialog-footer {
+  padding: 15px 20px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.custom-dialog-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.custom-dialog-btn-cancel {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.custom-dialog-btn-cancel:hover {
+  background: #e0e0e0;
+}
+
+.custom-dialog-btn-confirm {
+  background: #667eea;
+  color: white;
+}
+
+.custom-dialog-btn-confirm:hover {
+  background: #5568d3;
+}
