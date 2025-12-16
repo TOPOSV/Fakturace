@@ -23,7 +23,6 @@ interface InvoiceData {
   client_zip?: string;
   client_ico?: string;
   client_dic?: string;
-  client_is_vat_payer?: boolean;
   subtotal: number;
   vat: number;
   total: number;
@@ -50,6 +49,7 @@ interface UserData {
   swift?: string;
   logo?: string;
   stamp?: string;
+  is_vat_payer?: boolean;
 }
 
 export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserData) => {
@@ -118,8 +118,8 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // Set the loaded font (Roboto or Helvetica fallback) - must specify style!
   safeSetFont('normal');
   
-  // Check if client is VAT payer (default to true if not specified)
-  const isVatPayer = invoice.client_is_vat_payer !== undefined ? invoice.client_is_vat_payer : true;
+  // Check if user is VAT payer (default to true if not specified)
+  const isVatPayer = userData.is_vat_payer !== undefined ? userData.is_vat_payer : true;
   
   // ============================================
   // CALCULATE TOTALS FROM ITEMS (for accurate display throughout PDF)

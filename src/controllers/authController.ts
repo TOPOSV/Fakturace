@@ -63,7 +63,7 @@ export const login = (req: Request, res: Response) => {
 };
 
 export const getProfile = (req: AuthRequest, res: Response) => {
-  db.get('SELECT id, email, company_name, ico, dic, address, city, zip, country, phone, bank_account, iban, logo, stamp, theme, invoice_numbering_format FROM users WHERE id = ?', 
+  db.get('SELECT id, email, company_name, ico, dic, address, city, zip, country, phone, bank_account, iban, logo, stamp, theme, invoice_numbering_format, is_vat_payer FROM users WHERE id = ?', 
     [req.userId], 
     (err, user) => {
       if (err) {
@@ -78,15 +78,15 @@ export const getProfile = (req: AuthRequest, res: Response) => {
 };
 
 export const updateProfile = (req: AuthRequest, res: Response) => {
-  const { company_name, ico, dic, address, city, zip, phone, bank_account, iban, logo, stamp, invoice_numbering_format } = req.body;
+  const { company_name, ico, dic, address, city, zip, phone, bank_account, iban, logo, stamp, invoice_numbering_format, is_vat_payer } = req.body;
 
   const sql = `
     UPDATE users 
-    SET company_name = ?, ico = ?, dic = ?, address = ?, city = ?, zip = ?, phone = ?, bank_account = ?, iban = ?, logo = ?, stamp = ?, invoice_numbering_format = ?
+    SET company_name = ?, ico = ?, dic = ?, address = ?, city = ?, zip = ?, phone = ?, bank_account = ?, iban = ?, logo = ?, stamp = ?, invoice_numbering_format = ?, is_vat_payer = ?
     WHERE id = ?
   `;
 
-  db.run(sql, [company_name, ico, dic, address, city, zip, phone, bank_account, iban, logo, stamp, invoice_numbering_format, req.userId], (err) => {
+  db.run(sql, [company_name, ico, dic, address, city, zip, phone, bank_account, iban, logo, stamp, invoice_numbering_format, is_vat_payer, req.userId], (err) => {
     if (err) {
       return res.status(500).json({ error: 'Failed to update profile' });
     }
