@@ -145,6 +145,12 @@
   color: var(--text-primary) !important;
 }
 
+[data-theme="dark"] .modal-header h2,
+[data-theme="dark"] .custom-dialog-header h2 {
+  color: var(--text-primary) !important;
+  opacity: 0.95;
+}
+
 [data-theme="dark"] .modal-footer,
 [data-theme="dark"] .custom-dialog-footer {
   border-top: 1px solid var(--border-color);
@@ -152,6 +158,49 @@
 
 [data-theme="dark"] .custom-dialog-body {
   color: var(--text-secondary) !important;
+}
+
+/* Invoice Form Items and Summary Sections */
+[data-theme="dark"] .invoice-item {
+  background-color: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+[data-theme="dark"] .invoice-item label {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .invoice-item input,
+[data-theme="dark"] .invoice-item select {
+  background-color: var(--input-bg) !important;
+  border-color: var(--input-border) !important;
+  color: var(--text-primary) !important;
+}
+
+/* VAT Summary Section (Základ, DPH, Celkem) */
+[data-theme="dark"] .modal-content form > div[style*="background: #f5f5f5"],
+[data-theme="dark"] .modal-content form > div[style*="background:#f5f5f5"] {
+  background-color: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+[data-theme="dark"] .modal-content form > div[style*="background: #f5f5f5"] span,
+[data-theme="dark"] .modal-content form > div[style*="background:#f5f5f5"] span,
+[data-theme="dark"] .modal-content form > div[style*="background: #f5f5f5"] strong,
+[data-theme="dark"] .modal-content form > div[style*="background:#f5f5f5"] strong {
+  color: var(--text-primary) !important;
+}
+
+/* New Client Form Section */
+[data-theme="dark"] form > div[style*="background: #f9f9f9"],
+[data-theme="dark"] form > div[style*="background:#f9f9f9"] {
+  background-color: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] form > div[style*="background: #f9f9f9"] h3,
+[data-theme="dark"] form > div[style*="background:#f9f9f9"] h3 {
+  color: var(--text-primary) !important;
 }
 
 /* Form Actions and Buttons */

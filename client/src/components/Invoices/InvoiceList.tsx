@@ -12,8 +12,13 @@ const InvoiceList: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<any>(null);
   const [copyingInvoice, setCopyingInvoice] = useState<any>(null);
-  const [typeFilter, setTypeFilter] = useState<string>('all'); // 'all', 'issued', 'received'
-  const [statusFilter, setStatusFilter] = useState<string>('all'); // 'all', 'paid', 'unpaid', 'overdue', 'archive'
+  
+  // Load quick filters from localStorage
+  const savedTypeFilter = localStorage.getItem('invoiceTypeFilter') || 'all';
+  const savedStatusFilter = localStorage.getItem('invoiceStatusFilter') || 'all';
+  
+  const [typeFilter, setTypeFilter] = useState<string>(savedTypeFilter); // 'all', 'issued', 'received'
+  const [statusFilter, setStatusFilter] = useState<string>(savedStatusFilter); // 'all', 'paid', 'unpaid', 'overdue', 'archive'
   const [filters, setFilters] = useState({
     number: '',
     client_name: '',
@@ -33,6 +38,9 @@ const InvoiceList: React.FC = () => {
 
   useEffect(() => {
     applyFilters();
+    // Save filters to localStorage whenever they change
+    localStorage.setItem('invoiceTypeFilter', typeFilter);
+    localStorage.setItem('invoiceStatusFilter', statusFilter);
   }, [invoices, filters, typeFilter, statusFilter]);
 
   const loadInvoices = async () => {
