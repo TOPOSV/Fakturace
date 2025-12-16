@@ -611,8 +611,8 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     // Czech SPAYD standard format: ACC:IBAN (must be IBAN format)
     // IBAN: CZ12345678901234567890 (country code + numbers only, no spaces, no hyphens)
     // Example: ACC:CZ6508000000192000145399
-    if (userData.bank_account) {
-      const account = userData.bank_account.trim().toUpperCase();
+    if (userData.iban) {
+      const account = userData.iban.trim().toUpperCase();
       
       // Check if it's IBAN format (starts with 2 uppercase letters followed by numbers)
       if (/^[A-Z]{2}/.test(account)) {
@@ -624,8 +624,6 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
           qrData += `*ACC:${accountNumber}`;
         }
       }
-      // If it's Czech format with slash (e.g., 1234567890/0100), skip it
-      // SPAYD QR codes require IBAN format, not Czech format
     }
     
     // Add amount (required)

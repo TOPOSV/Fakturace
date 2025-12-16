@@ -12,6 +12,7 @@ interface SettingsFormData {
   zip: string;
   phone: string;
   bank_account: string;
+  iban: string;
   logo: string | null;
   stamp: string | null;
 }
@@ -27,6 +28,7 @@ const Settings: React.FC = () => {
     zip: '',
     phone: '',
     bank_account: '',
+    iban: '',
     logo: null,
     stamp: null,
   });
@@ -51,6 +53,7 @@ const Settings: React.FC = () => {
         zip: response.data.zip || '',
         phone: response.data.phone || '',
         bank_account: response.data.bank_account || '',
+        iban: response.data.iban || '',
         logo: response.data.logo || null,
         stamp: response.data.stamp || null,
       });
@@ -247,6 +250,18 @@ const Settings: React.FC = () => {
                 placeholder="123456789/0100"
               />
               <small>Číslo účtu bude zobrazeno na fakturách</small>
+            </div>
+            <div className="form-group full-width">
+              <label htmlFor="iban">IBAN</label>
+              <input
+                type="text"
+                id="iban"
+                name="iban"
+                value={formData.iban}
+                onChange={handleChange}
+                placeholder="CZ65 0800 0000 1920 0014 5399"
+              />
+              <small>IBAN pro QR kódy plateb na fakturách (mezery budou automaticky odstraněny)</small>
             </div>
           </div>
         </div>

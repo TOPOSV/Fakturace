@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { initializeDatabase } from './config/database';
 import { addLogoAndStampColumns } from './migrations/addLogoStamp';
 import { migrateAddReceivedInvoiceType } from './migrations/001_add_received_invoice_type';
+import { addIbanField } from './migrations/002_add_iban_field';
 
 import authRoutes from './routes/auth';
 import clientRoutes from './routes/clients';
@@ -29,6 +30,7 @@ setTimeout(async () => {
   try {
     await addLogoAndStampColumns();
     await migrateAddReceivedInvoiceType();
+    await addIbanField();
     console.log('All migrations completed successfully');
   } catch (err) {
     console.error('Migration error:', err);
