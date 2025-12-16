@@ -91,68 +91,77 @@ export const createInvoice = (req: AuthRequest, res: Response) => {
 
   const total = subtotal + totalVat;
 
-  // Generate invoice number
-  const year = new Date(issue_date).getFullYear();
-  
-  db.get(
-    'SELECT COUNT(*) as count FROM invoices WHERE user_id = ? AND type = ? AND strftime("%Y", issue_date) = ?',
-    [req.userId, type, year.toString()],
-    (err, result: any) => {
-      if (err) {
-        return res.status(500).json({ error: 'Failed to generate invoice number' });
-      }
-
-      const sequence = (result?.count || 0) + 1;
-      const invoiceNumber = generateInvoiceNumber(type, year, sequence);
-
-      const sql = `
-        INSERT INTO invoices (user_id, client_id, type, number, issue_date, due_date, tax_date, 
-                             subtotal, vat_rate, vat_amount, total, currency, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-
-      db.run(
-        sql,
-        [req.userId, client_id, type, invoiceNumber, issue_date, due_date, tax_date, 
-         subtotal, 21, totalVat, total, currency, notes],
-        function (err) {
-          if (err) {
-            return res.status(500).json({ error: 'Failed to create invoice' });
-          }
-
-          const invoiceId = this.lastID;
-
-          // Insert invoice items
-          const itemSql = `
-            INSERT INTO invoice_items (invoice_id, description, quantity, unit_price, vat_rate, total)
-            VALUES (?, ?, ?, ?, ?, ?)
-          `;
-
-          let itemsInserted = 0;
-          items.forEach((item: any) => {
-            const itemTotal = item.quantity * item.unit_price * (1 + (item.vat_rate || 21) / 100);
-            db.run(
-              itemSql,
-              [invoiceId, item.description, item.quantity, item.unit_price, item.vat_rate || 21, itemTotal],
-              (err) => {
-                if (err) {
-                  console.error('Error inserting item:', err);
-                }
-                itemsInserted++;
-                if (itemsInserted === items.length) {
-                  res.status(201).json({
-                    id: invoiceId,
-                    number: invoiceNumber,
-                    message: 'Invoice created successfully',
-                  });
-                }
-              }
-            );
-          });
-        }
-      );
+  // Get user's invoice numbering format preference
+  db.get('SELECT invoice_numbering_format FROM users WHERE id = ?', [req.userId], (err, userSettings: any) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to fetch user settings' });
     }
-  );
+
+    const numberingFormat = userSettings?.invoice_numbering_format || 'year_4';
+    
+    // Generate invoice number
+    const year = new Date(issue_date).getFullYear();
+    
+    db.get(
+      'SELECT COUNT(*) as count FROM invoices WHERE user_id = ? AND type = ? AND strftime("%Y", issue_date) = ?',
+      [req.userId, type, year.toString()],
+      (err, result: any) => {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to generate invoice number' });
+        }
+
+        const sequence = (result?.count || 0) + 1;
+        const invoiceNumber = generateInvoiceNumber(type, year, sequence, numberingFormat);
+
+        const sql = `
+          INSERT INTO invoices (user_id, client_id, type, number, issue_date, due_date, tax_date, 
+                               subtotal, vat_rate, vat_amount, total, currency, notes)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        db.run(
+          sql,
+          [req.userId, client_id, type, invoiceNumber, issue_date, due_date, tax_date, 
+           subtotal, 21, totalVat, total, currency, notes],
+          function (err) {
+            if (err) {
+              return res.status(500).json({ error: 'Failed to create invoice' });
+            }
+
+            const invoiceId = this.lastID;
+
+            // Insert invoice items
+            const itemSql = `
+              INSERT INTO invoice_items (invoice_id, description, quantity, unit_price, vat_rate, total)
+              VALUES (?, ?, ?, ?, ?, ?)
+            `;
+
+            let itemsInserted = 0;
+            items.forEach((item: any) => {
+              const itemTotal = item.quantity * item.unit_price * (1 + (item.vat_rate || 21) / 100);
+              db.run(
+                itemSql,
+                [invoiceId, item.description, item.quantity, item.unit_price, item.vat_rate || 21, itemTotal],
+                (err) => {
+                  if (err) {
+                    console.error('Error inserting item:', err);
+                  }
+                  itemsInserted++;
+                  if (itemsInserted === items.length) {
+                    res.status(201).json({
+                      id: invoiceId,
+                      number: invoiceNumber,
+                      message: 'Invoice created successfully',
+                    });
+                  }
+                }
+              );
+            });
+          }
+        );
+      }
+    );
+  });
 };
 
 export const updateInvoice = (req: AuthRequest, res: Response) => {

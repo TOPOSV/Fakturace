@@ -6,6 +6,7 @@ import { addLogoAndStampColumns } from './migrations/addLogoStamp';
 import { migrateAddReceivedInvoiceType } from './migrations/001_add_received_invoice_type';
 import { addIbanField } from './migrations/002_add_iban_field';
 import { addThemeColumn } from './migrations/003_add_theme_column';
+import { addInvoiceNumberingFormat } from './migrations/004_add_invoice_numbering_format';
 
 import authRoutes from './routes/auth';
 import clientRoutes from './routes/clients';
@@ -33,6 +34,7 @@ setTimeout(async () => {
     await migrateAddReceivedInvoiceType();
     await addIbanField();
     await addThemeColumn();
+    await addInvoiceNumberingFormat();
     console.log('All migrations completed successfully');
   } catch (err) {
     console.error('Migration error:', err);

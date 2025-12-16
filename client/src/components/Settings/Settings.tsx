@@ -16,6 +16,7 @@ interface SettingsFormData {
   iban: string;
   logo: string | null;
   stamp: string | null;
+  invoice_numbering_format: string;
 }
 
 const Settings: React.FC = () => {
@@ -33,6 +34,7 @@ const Settings: React.FC = () => {
     iban: '',
     logo: null,
     stamp: null,
+    invoice_numbering_format: 'year_4',
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -58,6 +60,7 @@ const Settings: React.FC = () => {
         iban: response.data.iban || '',
         logo: response.data.logo || null,
         stamp: response.data.stamp || null,
+        invoice_numbering_format: response.data.invoice_numbering_format || 'year_4',
       });
       if (response.data.logo) {
         setLogoPreview(response.data.logo);
@@ -234,6 +237,27 @@ const Settings: React.FC = () => {
                 value={formData.zip}
                 onChange={handleChange}
               />
+            </div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h2>📋 Číslování faktur</h2>
+          <div className="form-grid">
+            <div className="form-group full-width">
+              <label htmlFor="invoice_numbering_format">Formát číslování</label>
+              <select
+                id="invoice_numbering_format"
+                name="invoice_numbering_format"
+                value={formData.invoice_numbering_format}
+                onChange={handleChange}
+                className="form-select"
+              >
+                <option value="year_3">Rok + 3 čísla (např. 2025001)</option>
+                <option value="year_4">Rok + 4 čísla (např. 20250001)</option>
+                <option value="year_5">Rok + 5 čísel (např. 202500001)</option>
+              </select>
+              <small>Čísla faktur budou použita jako variabilní symbol (bez písmen VF/PF)</small>
             </div>
           </div>
         </div>

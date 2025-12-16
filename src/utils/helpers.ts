@@ -46,7 +46,18 @@ export const calculateVAT = (amount: number, vatRate: number = 21): { subtotal: 
   };
 };
 
-export const generateInvoiceNumber = (type: string, year: number, sequence: number): string => {
-  const prefix = type === 'invoice' ? 'VF' : type === 'received' ? 'PF' : 'FA';
-  return `${prefix}${year}${String(sequence).padStart(4, '0')}`;
+export const generateInvoiceNumber = (type: string, year: number, sequence: number, format: string = 'year_4'): string => {
+  // Parse format: year_3, year_4, year_5, or custom (which defaults to year_4)
+  let digits = 4; // default
+  
+  if (format === 'year_3') {
+    digits = 3;
+  } else if (format === 'year_4') {
+    digits = 4;
+  } else if (format === 'year_5') {
+    digits = 5;
+  }
+  
+  // Generate invoice number WITHOUT prefix (just numbers for variable symbol compatibility)
+  return `${year}${String(sequence).padStart(digits, '0')}`;
 };
