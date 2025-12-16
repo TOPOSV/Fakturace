@@ -475,6 +475,7 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
       halign: 'center',
       fontSize: 9
     },
+    // @ts-ignore - columnStyles with numeric keys is compatible with jspdf-autotable
     columnStyles: columnStyles,
     alternateRowStyles: {
       fillColor: colors.lightGray
