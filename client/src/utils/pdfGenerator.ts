@@ -605,14 +605,14 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     // Generate QR Payment Code according to Czech SPAYD standard
     // Format: SPD*1.0*ACC:CZ1234567890*AM:12345.67*CC:CZK*MSG:Platba za VF20240001
     // SPAYD format uses single line with asterisk separators (not newlines)
-    const qrParts = ['SPD*1.0'];
+    let qrData = 'SPD*1.0';
     
     // Add account if available - IBAN format ONLY
     // Czech SPAYD standard format: ACC:IBAN (must be IBAN format)
     // IBAN: CZ12345678901234567890 (country code + numbers only, no spaces, no hyphens)
     // Example: ACC:CZ6508000000192000145399
     if (userData.bank_account) {
-      const account = userData.bank_account.trim();
+      const account = userData.bank_account.trim().toUpperCase();
       
       // Check if it's IBAN format (starts with 2 uppercase letters followed by numbers)
       if (/^[A-Z]{2}/.test(account)) {
@@ -621,24 +621,24 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
         
         // Validate it's proper IBAN format (2 letters + numbers only)
         if (/^[A-Z]{2}[0-9]+$/.test(accountNumber)) {
-          qrParts.push(`ACC:${accountNumber}`);
+          qrData += `*ACC:${accountNumber}`;
         }
       }
       // If it's Czech format with slash (e.g., 1234567890/0100), skip it
       // SPAYD QR codes require IBAN format, not Czech format
     }
     
-    // Add amount
-    qrParts.push(`AM:${finalTotal.toFixed(2)}`);
+    // Add amount (required)
+    qrData += `*AM:${finalTotal.toFixed(2)}`;
     
-    // Add currency
-    qrParts.push('CC:CZK');
+    // Add currency (required)
+    qrData += '*CC:CZK';
     
     // Add message (invoice number)
-    qrParts.push(`MSG:Platba za ${invoice.number}`);
+    qrData += `*MSG:Platba za ${invoice.number}`;
     
-    // Join with asterisk as per Czech SPAYD standard (single line format)
-    const qrData = qrParts.join('*');
+    // Log QR data for debugging
+    console.log('QR Code Data:', qrData);
     
     // Generate QR code as data URL
     const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
