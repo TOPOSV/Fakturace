@@ -63,7 +63,7 @@ export const login = (req: Request, res: Response) => {
 };
 
 export const getProfile = (req: AuthRequest, res: Response) => {
-  db.get('SELECT id, email, company_name, ico, dic, address, city, zip, country, phone, bank_account, iban, logo, stamp FROM users WHERE id = ?', 
+  db.get('SELECT id, email, company_name, ico, dic, address, city, zip, country, phone, bank_account, iban, logo, stamp, theme FROM users WHERE id = ?', 
     [req.userId], 
     (err, user) => {
       if (err) {
@@ -91,5 +91,22 @@ export const updateProfile = (req: AuthRequest, res: Response) => {
       return res.status(500).json({ error: 'Failed to update profile' });
     }
     res.json({ message: 'Profile updated successfully' });
+  });
+};
+
+export const updateTheme = (req: AuthRequest, res: Response) => {
+  const { theme } = req.body;
+
+  if (!theme || !['light', 'dark'].includes(theme)) {
+    return res.status(400).json({ error: 'Invalid theme. Must be "light" or "dark"' });
+  }
+
+  const sql = 'UPDATE users SET theme = ? WHERE id = ?';
+
+  db.run(sql, [theme, req.userId], (err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to update theme preference' });
+    }
+    res.json({ message: 'Theme preference updated successfully', theme });
   });
 };

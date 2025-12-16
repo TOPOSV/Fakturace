@@ -227,3 +227,138 @@
     padding: 12px;
   }
 }
+
+/* Theme Toggle Styles */
+.theme-toggle-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.theme-toggle-info {
+  flex: 1;
+}
+
+.theme-toggle-info label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.theme-toggle-info p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.theme-toggle-control {
+  flex-shrink: 0;
+}
+
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.theme-toggle-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.theme-toggle-btn:active {
+  transform: translateY(0);
+}
+
+.theme-icon {
+  font-size: 18px;
+  display: inline-block;
+}
+
+/* Update existing styles to use CSS variables */
+.settings-container {
+  background-color: var(--bg-secondary);
+}
+
+.settings-header h1 {
+  color: var(--text-primary);
+}
+
+.settings-header p {
+  color: var(--text-secondary);
+}
+
+.settings-form {
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.form-section {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.form-section h2 {
+  color: var(--text-primary);
+}
+
+.form-group label {
+  color: var(--text-primary);
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-primary);
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  border-color: var(--border-focus);
+  background-color: var(--input-bg);
+}
+
+.form-group small {
+  color: var(--text-secondary);
+}
+
+.upload-info p {
+  color: var(--text-primary);
+}
+
+.upload-info small {
+  color: var(--text-secondary);
+}
+
+.upload-label {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 2px dashed var(--border-color);
+}
+
+.upload-label:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--primary-color);
+}
+
+.preview-container {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+}
+

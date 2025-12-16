@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import api from '../../services/api';
 import './Settings.css';
 
@@ -19,6 +20,7 @@ interface SettingsFormData {
 
 const Settings: React.FC = () => {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [formData, setFormData] = useState<SettingsFormData>({
     company_name: '',
     ico: '',
@@ -232,6 +234,36 @@ const Settings: React.FC = () => {
                 value={formData.zip}
                 onChange={handleChange}
               />
+            </div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h2>🌓 Vzhled aplikace</h2>
+          <div className="theme-toggle-section">
+            <div className="theme-toggle-info">
+              <label>Barevný režim</label>
+              <p>Přepínejte mezi světlým a tmavým režimem</p>
+            </div>
+            <div className="theme-toggle-control">
+              <button
+                type="button"
+                className="theme-toggle-btn"
+                onClick={toggleTheme}
+                aria-label="Přepnout režim"
+              >
+                {theme === 'light' ? (
+                  <>
+                    <span className="theme-icon">🌙</span>
+                    <span>Tmavý režim</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="theme-icon">☀️</span>
+                    <span>Světlý režim</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

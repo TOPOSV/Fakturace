@@ -1,0 +1,255 @@
+/* Universal Dark Mode Styles - Applied globally to all components */
+
+/* Layout and Navigation */
+[data-theme="dark"] .layout {
+  background-color: var(--bg-primary);
+}
+
+[data-theme="dark"] .header {
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .nav-link {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .nav-link:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-hover);
+}
+
+[data-theme="dark"] .nav-link.active {
+  color: var(--primary-color);
+  background-color: var(--bg-tertiary);
+}
+
+/* Cards and Containers */
+[data-theme="dark"] .card,
+[data-theme="dark"] .stats-card,
+[data-theme="dark"] .dashboard-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
+}
+
+[data-theme="dark"] .card:hover {
+  box-shadow: var(--card-shadow-hover);
+}
+
+/* Tables */
+[data-theme="dark"] table {
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] table thead {
+  background-color: var(--table-header-bg);
+}
+
+[data-theme="dark"] table th {
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] table td {
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
+}
+
+[data-theme="dark"] table tbody tr:hover {
+  background-color: var(--table-row-hover);
+}
+
+/* Forms and Inputs */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] select:focus {
+  border-color: var(--border-focus);
+  background-color: var(--input-bg);
+  outline: none;
+}
+
+/* Buttons */
+[data-theme="dark"] .btn-secondary {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+  background-color: var(--bg-hover);
+}
+
+/* Modals and Overlays */
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .modal {
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .modal-header {
+  border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .modal-footer {
+  border-top: 1px solid var(--border-color);
+}
+
+/* Dashboard Specific */
+[data-theme="dark"] .stats-grid {
+  background-color: transparent;
+}
+
+[data-theme="dark"] .stat-value {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .stat-label {
+  color: var(--text-secondary);
+}
+
+/* Invoice List */
+[data-theme="dark"] .invoice-filters {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .filter-btn {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .filter-btn.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+[data-theme="dark"] .filter-btn:hover {
+  background-color: var(--bg-hover);
+}
+
+/* Charts */
+[data-theme="dark"] .chart-container {
+  background-color: var(--card-bg);
+}
+
+/* Text Colors */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6 {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] p {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] label {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] small {
+  color: var(--text-secondary);
+}
+
+/* Status Badges */
+[data-theme="dark"] .badge {
+  border: 1px solid var(--border-color);
+}
+
+/* Alerts */
+[data-theme="dark"] .alert-success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--success-color);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="dark"] .alert-error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--error-color);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .alert-warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--warning-color);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+[data-theme="dark"] .alert-info {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--info-color);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Dropdowns */
+[data-theme="dark"] .dropdown-menu {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
+}
+
+[data-theme="dark"] .dropdown-item {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+  background-color: var(--bg-hover);
+}
+
+/* Scrollbars */
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 5px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* Loading States */
+[data-theme="dark"] .loading,
+[data-theme="dark"] .spinner {
+  color: var(--text-primary);
+}
+
+/* Dividers */
+[data-theme="dark"] hr {
+  border-color: var(--border-color);
+}
+
+/* Links */
+[data-theme="dark"] a {
+  color: var(--primary-color);
+}
+
+[data-theme="dark"] a:hover {
+  color: var(--primary-hover);
+}
