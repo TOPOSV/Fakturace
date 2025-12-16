@@ -1,0 +1,3 @@
+# This file will contain the Roboto font in base64 format
+# The font needs to be added manually or via online converter
+# https://rawgit.com/MrRio/jsPDF/master/fontconverter/fontconverter.html
