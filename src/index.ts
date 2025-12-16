@@ -5,8 +5,7 @@ import { initializeDatabase } from './config/database';
 import { addLogoAndStampColumns } from './migrations/addLogoStamp';
 import { migrateAddReceivedInvoiceType } from './migrations/001_add_received_invoice_type';
 import { addIbanField } from './migrations/002_add_iban_field';
-import { up as addThemeColumn } from './migrations/003_add_theme_column';
-import { pool } from './config/database';
+import { addThemeColumn } from './migrations/003_add_theme_column';
 
 import authRoutes from './routes/auth';
 import clientRoutes from './routes/clients';
@@ -33,7 +32,7 @@ setTimeout(async () => {
     await addLogoAndStampColumns();
     await migrateAddReceivedInvoiceType();
     await addIbanField();
-    await addThemeColumn(pool);
+    await addThemeColumn();
     console.log('All migrations completed successfully');
   } catch (err) {
     console.error('Migration error:', err);
