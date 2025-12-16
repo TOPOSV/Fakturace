@@ -607,44 +607,25 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     // SPAYD format uses single line with asterisk separators (not newlines)
     const qrParts = ['SPD*1.0'];
     
-    // Add account if available - IBAN format with optional SWIFT/BIC code
-    // Czech SPAYD standard format: ACC:IBAN+SWIFT (SWIFT is optional)
-    // Format: "IBAN + SWIFT" where components are separated by '+'
+    // Add account if available - IBAN format ONLY
+    // Czech SPAYD standard format: ACC:IBAN (must be IBAN format)
     // IBAN: CZ12345678901234567890 (country code + numbers only, no spaces, no hyphens)
-    // SWIFT: 8 or 11 character BIC code (e.g., FIOBCZPPXXX) - optional
-    // Example: ACC:CZ6508000000192000145399+FIOBCZPPXXX
-    if (userData.iban || userData.bank_account) {
-      let accountNumber = '';
+    // Example: ACC:CZ6508000000192000145399
+    if (userData.bank_account) {
+      const account = userData.bank_account.trim();
       
-      if (userData.iban) {
-        // IBAN format: CZ65 0800 0000 1920 0014 5399 -> CZ6508000000192000145399
-        // Remove ALL spaces, hyphens, and any other separators
-        accountNumber = userData.iban.replace(/[\s-]/g, '');
-      } else if (userData.bank_account) {
-        const account = userData.bank_account.trim();
+      // Check if it's IBAN format (starts with 2 uppercase letters followed by numbers)
+      if (/^[A-Z]{2}/.test(account)) {
+        // It's IBAN - remove all spaces and hyphens
+        const accountNumber = account.replace(/[\s-]/g, '');
         
-        // Check if it's IBAN format (starts with CZ or other 2-letter country code)
-        if (/^[A-Z]{2}/.test(account)) {
-          // It's IBAN - remove all spaces and hyphens
-          accountNumber = account.replace(/[\s-]/g, '');
-        }
-        // If it's Czech format with slash (e.g., 1234567890/0100), skip it
-        // SPAYD QR codes require IBAN format, not Czech format
-      }
-      
-      // Only add account if it's valid IBAN (starts with country code, no slashes)
-      if (accountNumber && /^[A-Z]{2}[0-9]+$/.test(accountNumber)) {
-        // Add SWIFT/BIC code if available (optional second component separated by +)
-        // SWIFT code format: 8 or 11 alphanumeric characters (bank identifier per ISO 9362)
-        // Example: FIOBCZPPXXX (Fio banka), CEKOCZPPXXX (ČSOB), GIBACZPXXXX (Česká spořitelna)
-        if (userData.swift && /^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(userData.swift.trim().toUpperCase())) {
-          const swiftCode = userData.swift.trim().toUpperCase();
-          qrParts.push(`ACC:${accountNumber}+${swiftCode}`);
-        } else {
-          // Just IBAN without SWIFT (SWIFT is optional per standard)
+        // Validate it's proper IBAN format (2 letters + numbers only)
+        if (/^[A-Z]{2}[0-9]+$/.test(accountNumber)) {
           qrParts.push(`ACC:${accountNumber}`);
         }
       }
+      // If it's Czech format with slash (e.g., 1234567890/0100), skip it
+      // SPAYD QR codes require IBAN format, not Czech format
     }
     
     // Add amount
