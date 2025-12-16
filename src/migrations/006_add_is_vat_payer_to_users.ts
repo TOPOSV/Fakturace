@@ -13,6 +13,8 @@ export const addIsVatPayerToUsers = (): Promise<void> => {
 
       if (!columnExists) {
         console.log('Adding is_vat_payer column to users table...');
+        // Default to 1 (true) - assumes existing users are VAT payers for backward compatibility
+        // Users can update this setting in their profile
         db.run(
           "ALTER TABLE users ADD COLUMN is_vat_payer INTEGER DEFAULT 1",
           (alterErr) => {

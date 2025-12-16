@@ -118,8 +118,9 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // Set the loaded font (Roboto or Helvetica fallback) - must specify style!
   safeSetFont('normal');
   
-  // Check if user is VAT payer (default to true if not specified)
-  const isVatPayer = userData.is_vat_payer !== undefined ? userData.is_vat_payer : true;
+  // Check if user is VAT payer (default to true for backward compatibility)
+  // This should always be set in the database, but we provide a safe default
+  const isVatPayer = userData.is_vat_payer !== undefined ? Boolean(userData.is_vat_payer) : true;
   
   // ============================================
   // CALCULATE TOTALS FROM ITEMS (for accurate display throughout PDF)

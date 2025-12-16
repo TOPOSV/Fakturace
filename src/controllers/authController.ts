@@ -63,18 +63,23 @@ export const login = (req: Request, res: Response) => {
 };
 
 export const getProfile = (req: AuthRequest, res: Response) => {
-  db.get('SELECT id, email, company_name, ico, dic, address, city, zip, country, phone, bank_account, iban, logo, stamp, theme, invoice_numbering_format, is_vat_payer FROM users WHERE id = ?', 
-    [req.userId], 
-    (err, user) => {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' });
-      }
-      if (!user) {
-        return res.status(404).json({ error: 'User not found' });
-      }
-      res.json(user);
+  const sql = `
+    SELECT id, email, company_name, ico, dic, address, city, zip, country, 
+           phone, bank_account, iban, logo, stamp, theme, 
+           invoice_numbering_format, is_vat_payer 
+    FROM users 
+    WHERE id = ?
+  `;
+  
+  db.get(sql, [req.userId], (err, user) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
     }
-  );
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(user);
+  });
 };
 
 export const updateProfile = (req: AuthRequest, res: Response) => {
