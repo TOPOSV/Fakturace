@@ -40,7 +40,7 @@ export interface Invoice {
   user_id?: number;
   client_id: number;
   client_name?: string;
-  type: 'invoice' | 'received';
+  type: 'invoice' | 'received' | 'advance';
   number?: string;
   issue_date: string;
   due_date: string;
@@ -53,6 +53,8 @@ export interface Invoice {
   status?: 'unpaid' | 'paid' | 'cancelled' | 'overdue';
   notes?: string;
   items?: InvoiceItem[];
+  linked_invoice_id?: number;
+  auto_create_regular_invoice?: number;
 }
 
 export interface Transaction {

@@ -5,6 +5,7 @@ import {
   createInvoice,
   updateInvoice,
   deleteInvoice,
+  createRegularFromAdvance,
 } from '../controllers/invoiceController';
 import { authenticateToken } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimiter';
@@ -17,6 +18,7 @@ router.use(apiLimiter);
 router.get('/', getInvoices);
 router.get('/:id', getInvoice);
 router.post('/', createInvoice);
+router.post('/:id/create-regular', createRegularFromAdvance);
 router.put('/:id', updateInvoice);
 router.delete('/:id', deleteInvoice);
 

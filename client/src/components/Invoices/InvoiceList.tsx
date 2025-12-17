@@ -17,7 +17,7 @@ const InvoiceList: React.FC = () => {
   const savedTypeFilter = localStorage.getItem('invoiceTypeFilter') || 'all';
   const savedStatusFilter = localStorage.getItem('invoiceStatusFilter') || 'all';
   
-  const [typeFilter, setTypeFilter] = useState<string>(savedTypeFilter); // 'all', 'issued', 'received'
+  const [typeFilter, setTypeFilter] = useState<string>(savedTypeFilter); // 'all', 'issued', 'received', 'advance'
   const [statusFilter, setStatusFilter] = useState<string>(savedStatusFilter); // 'all', 'paid', 'unpaid', 'overdue', 'archive'
   const [filters, setFilters] = useState({
     number: '',
@@ -62,6 +62,8 @@ const InvoiceList: React.FC = () => {
       filtered = filtered.filter(inv => inv.type === 'invoice');
     } else if (typeFilter === 'received') {
       filtered = filtered.filter(inv => inv.type === 'received');
+    } else if (typeFilter === 'advance') {
+      filtered = filtered.filter(inv => inv.type === 'advance');
     }
     
     // Apply status filter (Uhrazeno/Neuhrazeno/Po splatnosti/Archiv)
@@ -176,6 +178,28 @@ const InvoiceList: React.FC = () => {
     } catch (error) {
       console.error('Failed to update invoice:', error);
       alert('Nepodařilo se označit fakturu jako uhrazenou');
+    }
+  };
+
+  const handleCreateRegularFromAdvance = async (invoice: any) => {
+    const confirmed = await showConfirmDialog(`Vytvořit běžnou fakturu ze zálohové faktury ${invoice.number}?`);
+    if (!confirmed) return;
+    
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/invoices/${invoice.id}/create-regular`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      alert(`Běžná faktura úspěšně vytvořena (ID: ${response.data.regularInvoiceId})`);
+      loadInvoices();
+    } catch (error: any) {
+      console.error('Failed to create regular invoice:', error);
+      alert(error.response?.data?.error || 'Nepodařilo se vytvořit běžnou fakturu');
     }
   };
 
@@ -308,6 +332,12 @@ const InvoiceList: React.FC = () => {
           PŘIJATÉ FAKTURY
         </button>
         <button 
+          className={`quick-filter-btn ${typeFilter === 'advance' ? 'active' : ''}`}
+          onClick={() => setTypeFilter(typeFilter === 'advance' ? 'all' : 'advance')}
+        >
+          ZÁLOHOVÉ FAKTURY
+        </button>
+        <button 
           className={`quick-filter-btn ${statusFilter === 'paid' ? 'active' : ''}`}
           onClick={() => setStatusFilter(statusFilter === 'paid' ? 'all' : 'paid')}
         >
@@ -362,13 +392,33 @@ const InvoiceList: React.FC = () => {
                 <tr key={invoice.id}>
                   <td>{invoice.number}</td>
                   <td>{invoice.client_name}</td>
-                  <td>{invoice.type === 'invoice' ? 'Vydaná faktura' : invoice.type === 'received' ? 'Přijatá faktura' : invoice.type}</td>
+                  <td>
+                    {invoice.type === 'invoice' ? 'Vydaná faktura' : 
+                     invoice.type === 'received' ? 'Přijatá faktura' : 
+                     invoice.type === 'advance' ? 'Zálohová faktura' : invoice.type}
+                    {invoice.type === 'advance' && invoice.linked_invoice_id && (
+                      <span style={{ display: 'block', fontSize: '0.85em', color: '#666' }}>
+                        (Vytvořena běžná faktura)
+                      </span>
+                    )}
+                  </td>
                   <td>{new Date(invoice.issue_date).toLocaleDateString('cs-CZ')}</td>
                   <td>{new Date(invoice.due_date).toLocaleDateString('cs-CZ')}</td>
                   <td>{invoice.total?.toFixed(2)} {invoice.currency}</td>
                   <td>{subtotal?.toFixed(2)} {invoice.currency}</td>
                   <td><span className={`status-badge ${invoice.status}`}>{getStatusText(invoice.status)}</span></td>
                   <td className="action-buttons">
+                    {/* Show "Create Regular Invoice" button for advance invoices that are paid and don't have linked invoice */}
+                    {invoice.type === 'advance' && invoice.status === 'paid' && !invoice.linked_invoice_id && (
+                      <button
+                        onClick={() => handleCreateRegularFromAdvance(invoice)}
+                        className="action-btn create-regular-btn"
+                        title="Vytvořit běžnou fakturu"
+                        style={{ backgroundColor: '#28a745', fontSize: '1.1em' }}
+                      >
+                        📝
+                      </button>
+                    )}
                     <button
                       onClick={() => handlePay(invoice)}
                       className="action-btn pay-btn"
