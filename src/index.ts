@@ -9,6 +9,7 @@ import { addThemeColumn } from './migrations/003_add_theme_column';
 import { addInvoiceNumberingFormat } from './migrations/004_add_invoice_numbering_format';
 import { addIsVatPayerToClients } from './migrations/005_add_is_vat_payer_to_clients';
 import { moveIsVatPayerToUsers } from './migrations/006_move_is_vat_payer_to_users';
+import { migrateAddAdvanceInvoiceType } from './migrations/007_add_advance_invoice_type';
 
 import authRoutes from './routes/auth';
 import clientRoutes from './routes/clients';
@@ -39,6 +40,7 @@ setTimeout(async () => {
     await addInvoiceNumberingFormat();
     await addIsVatPayerToClients();
     await moveIsVatPayerToUsers();
+    await migrateAddAdvanceInvoiceType();
     console.log('All migrations completed successfully');
   } catch (err) {
     console.error('Migration error:', err);

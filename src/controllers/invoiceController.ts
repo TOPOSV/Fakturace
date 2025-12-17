@@ -73,6 +73,7 @@ export const createInvoice = (req: AuthRequest, res: Response) => {
     items,
     notes,
     currency = 'CZK',
+    auto_create_regular_invoice = 0,
   } = req.body;
 
   if (!client_id || !type || !issue_date || !due_date || !items || items.length === 0) {
@@ -116,14 +117,14 @@ export const createInvoice = (req: AuthRequest, res: Response) => {
 
         const sql = `
           INSERT INTO invoices (user_id, client_id, type, number, issue_date, due_date, tax_date, 
-                               subtotal, vat_rate, vat_amount, total, currency, notes)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               subtotal, vat_rate, vat_amount, total, currency, notes, auto_create_regular_invoice)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         db.run(
           sql,
           [req.userId, client_id, type, invoiceNumber, issue_date, due_date, tax_date, 
-           subtotal, 21, totalVat, total, currency, notes],
+           subtotal, 21, totalVat, total, currency, notes, auto_create_regular_invoice],
           function (err) {
             if (err) {
               return res.status(500).json({ error: 'Failed to create invoice' });
@@ -169,16 +170,174 @@ export const updateInvoice = (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { status, notes } = req.body;
 
-  const sql = 'UPDATE invoices SET status = ?, notes = ? WHERE id = ? AND user_id = ?';
-
-  db.run(sql, [status, notes, id, req.userId], function (err) {
+  // First get the invoice to check if it's an advance invoice with auto_create enabled
+  db.get('SELECT * FROM invoices WHERE id = ? AND user_id = ?', [id, req.userId], (err, invoice: any) => {
     if (err) {
-      return res.status(500).json({ error: 'Failed to update invoice' });
+      return res.status(500).json({ error: 'Failed to fetch invoice' });
     }
-    if (this.changes === 0) {
+    if (!invoice) {
       return res.status(404).json({ error: 'Invoice not found' });
     }
-    res.json({ message: 'Invoice updated successfully' });
+
+    const sql = 'UPDATE invoices SET status = ?, notes = ? WHERE id = ? AND user_id = ?';
+
+    db.run(sql, [status, notes, id, req.userId], function (err) {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to update invoice' });
+      }
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Invoice not found' });
+      }
+
+      // If this is an advance invoice being marked as paid and auto_create is enabled
+      if (invoice.type === 'advance' && status === 'paid' && invoice.auto_create_regular_invoice === 1 && !invoice.linked_invoice_id) {
+        createRegularInvoiceFromAdvance(invoice, req.userId!, (err, regularInvoiceId) => {
+          if (err) {
+            console.error('Failed to auto-create regular invoice:', err);
+            return res.json({ 
+              message: 'Invoice updated successfully, but failed to create regular invoice',
+              warning: 'Failed to create regular invoice automatically'
+            });
+          }
+          
+          // Update the advance invoice to link to the regular invoice
+          db.run('UPDATE invoices SET linked_invoice_id = ? WHERE id = ?', [regularInvoiceId, id], (err) => {
+            if (err) {
+              console.error('Failed to link invoices:', err);
+            }
+            res.json({ 
+              message: 'Invoice updated successfully and regular invoice created',
+              regularInvoiceId 
+            });
+          });
+        });
+      } else {
+        res.json({ message: 'Invoice updated successfully' });
+      }
+    });
+  });
+};
+
+// Helper function to create a regular invoice from an advance invoice
+const createRegularInvoiceFromAdvance = (advanceInvoice: any, userId: number, callback: (err: any, invoiceId?: number) => void) => {
+  // Get the advance invoice items
+  db.all('SELECT * FROM invoice_items WHERE invoice_id = ?', [advanceInvoice.id], (err, items: any[]) => {
+    if (err) {
+      return callback(err);
+    }
+
+    // Get user's invoice numbering format preference
+    db.get('SELECT invoice_numbering_format FROM users WHERE id = ?', [userId], (err, userSettings: any) => {
+      if (err) {
+        return callback(err);
+      }
+
+      const numberingFormat = userSettings?.invoice_numbering_format || 'year_4';
+      const year = new Date().getFullYear();
+      
+      // Generate invoice number for regular invoice
+      db.get(
+        'SELECT COUNT(*) as count FROM invoices WHERE user_id = ? AND type = ? AND strftime("%Y", issue_date) = ?',
+        [userId, 'invoice', year.toString()],
+        (err, result: any) => {
+          if (err) {
+            return callback(err);
+          }
+
+          const sequence = (result?.count || 0) + 1;
+          const invoiceNumber = generateInvoiceNumber('invoice', year, sequence, numberingFormat);
+          const today = new Date().toISOString().split('T')[0];
+          const dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+          const sql = `
+            INSERT INTO invoices (user_id, client_id, type, number, issue_date, due_date, tax_date, 
+                                 subtotal, vat_rate, vat_amount, total, currency, notes, linked_invoice_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `;
+
+          const notesText = `Běžná faktura vytvořená ze zálohové faktury č. ${advanceInvoice.number}${advanceInvoice.notes ? '\n' + advanceInvoice.notes : ''}`;
+
+          db.run(
+            sql,
+            [userId, advanceInvoice.client_id, 'invoice', invoiceNumber, today, dueDate, today,
+             advanceInvoice.subtotal, advanceInvoice.vat_rate, advanceInvoice.vat_amount, 
+             advanceInvoice.total, advanceInvoice.currency, notesText, advanceInvoice.id],
+            function (err) {
+              if (err) {
+                return callback(err);
+              }
+
+              const regularInvoiceId = this.lastID;
+
+              // Copy invoice items
+              const itemSql = `
+                INSERT INTO invoice_items (invoice_id, description, quantity, unit_price, vat_rate, total)
+                VALUES (?, ?, ?, ?, ?, ?)
+              `;
+
+              let itemsInserted = 0;
+              items.forEach((item: any) => {
+                db.run(
+                  itemSql,
+                  [regularInvoiceId, item.description, item.quantity, item.unit_price, item.vat_rate, item.total],
+                  (err) => {
+                    if (err) {
+                      console.error('Error copying item:', err);
+                    }
+                    itemsInserted++;
+                    if (itemsInserted === items.length) {
+                      callback(null, regularInvoiceId);
+                    }
+                  }
+                );
+              });
+
+              // If no items, still call callback
+              if (items.length === 0) {
+                callback(null, regularInvoiceId);
+              }
+            }
+          );
+        }
+      );
+    });
+  });
+};
+
+// Endpoint to manually create a regular invoice from an advance invoice
+export const createRegularFromAdvance = (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+
+  // Get the advance invoice
+  db.get('SELECT * FROM invoices WHERE id = ? AND user_id = ? AND type = ?', [id, req.userId, 'advance'], (err, invoice: any) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to fetch advance invoice' });
+    }
+    if (!invoice) {
+      return res.status(404).json({ error: 'Advance invoice not found' });
+    }
+    if (invoice.linked_invoice_id) {
+      return res.status(400).json({ error: 'Regular invoice already created for this advance invoice' });
+    }
+
+    createRegularInvoiceFromAdvance(invoice, req.userId!, (err, regularInvoiceId) => {
+      if (err) {
+        console.error('Failed to create regular invoice:', err);
+        return res.status(500).json({ error: 'Failed to create regular invoice' });
+      }
+      
+      // Update the advance invoice to link to the regular invoice
+      db.run('UPDATE invoices SET linked_invoice_id = ? WHERE id = ?', [regularInvoiceId, id], (err) => {
+        if (err) {
+          console.error('Failed to link invoices:', err);
+          return res.status(500).json({ error: 'Invoice created but failed to link' });
+        }
+        res.status(201).json({ 
+          message: 'Regular invoice created successfully from advance invoice',
+          regularInvoiceId 
+        });
+      });
+    });
   });
 };
 

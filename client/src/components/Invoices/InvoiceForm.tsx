@@ -23,6 +23,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
     tax_date: invoice?.tax_date ? new Date(invoice.tax_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     currency: sourceData?.currency || 'CZK',
     notes: sourceData?.notes || '',
+    auto_create_regular_invoice: sourceData?.auto_create_regular_invoice || 0,
   });
   const [items, setItems] = useState(
     sourceData?.items && sourceData.items.length > 0 
@@ -263,9 +264,29 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
               >
                 <option value="invoice">Vydaná faktura</option>
                 <option value="received">Přijatá faktura</option>
+                <option value="advance">Zálohová faktura</option>
               </select>
             </div>
           </div>
+
+          {/* Show auto-create checkbox only for advance invoices */}
+          {formData.type === 'advance' && (
+            <div className="form-row">
+              <div className="form-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.auto_create_regular_invoice === 1}
+                    onChange={(e) => setFormData({ ...formData, auto_create_regular_invoice: e.target.checked ? 1 : 0 })}
+                  />
+                  <span>Automaticky vytvořit běžnou fakturu po zaplacení</span>
+                </label>
+                <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                  Po označení zálohové faktury jako zaplacené bude automaticky vytvořena běžná daňová faktura
+                </small>
+              </div>
+            </div>
+          )}
 
           {showNewClientForm && (
             <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '5px', marginBottom: '20px', border: '1px solid #ddd' }}>
