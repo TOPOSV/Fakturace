@@ -290,14 +290,20 @@ const createRegularInvoiceFromAdvance = (advanceInvoice: any, userId: number, ca
               // All items to insert (original items + paid advance line item if paid)
               const allItems = [...items];
               
-              // Add a line item showing the paid advance with price 0 only if advance was paid
+              // Add a line item showing the paid advance with negative value if advance was paid
               if (advanceInvoice.status === 'paid') {
+                // Calculate the negative unit price from the advance invoice total
+                // We need to reverse calculate: total with VAT -> unit price without VAT
+                const negativeTotal = -advanceInvoice.total;
+                const negativeSubtotal = -advanceInvoice.subtotal;
+                const negativeVatAmount = negativeTotal - negativeSubtotal;
+                
                 allItems.push({
                   description: `Uhrazená záloha č. ${advanceInvoice.number}`,
                   quantity: 1,
-                  unit_price: 0,
-                  vat_rate: 0,
-                  total: 0
+                  unit_price: negativeSubtotal,
+                  vat_rate: advanceInvoice.vat_rate,
+                  total: negativeTotal
                 });
               }
 

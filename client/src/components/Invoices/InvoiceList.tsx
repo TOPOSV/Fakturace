@@ -173,7 +173,13 @@ const InvoiceList: React.FC = () => {
     if (!confirmed) return;
     
     try {
-      await invoiceService.update(invoice.id, { status: 'paid' });
+      const response = await invoiceService.update(invoice.id, { status: 'paid' });
+      
+      // Check if a regular invoice was auto-created from advance invoice
+      if (response.regularInvoiceId) {
+        alert(`Faktura uhrazena. Běžná faktura úspěšně vytvořena (ID: ${response.regularInvoiceId})`);
+      }
+      
       loadInvoices();
     } catch (error) {
       console.error('Failed to update invoice:', error);
