@@ -287,17 +287,19 @@ const createRegularInvoiceFromAdvance = (advanceInvoice: any, userId: number, ca
                 VALUES (?, ?, ?, ?, ?, ?)
               `;
 
-              // All items to insert (original items + paid advance line item)
+              // All items to insert (original items + paid advance line item if paid)
               const allItems = [...items];
               
-              // Add a line item showing the paid advance with price 0
-              allItems.push({
-                description: `Uhrazená záloha č. ${advanceInvoice.number}`,
-                quantity: 1,
-                unit_price: 0,
-                vat_rate: 0,
-                total: 0
-              });
+              // Add a line item showing the paid advance with price 0 only if advance was paid
+              if (advanceInvoice.status === 'paid') {
+                allItems.push({
+                  description: `Uhrazená záloha č. ${advanceInvoice.number}`,
+                  quantity: 1,
+                  unit_price: 0,
+                  vat_rate: 0,
+                  total: 0
+                });
+              }
 
               // If no items, call callback immediately
               if (allItems.length === 0) {
