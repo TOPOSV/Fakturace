@@ -142,9 +142,10 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   
   // Use calculated values from items if we have items, otherwise fall back to invoice values
   // Note: We check for items.length > 0 instead of calculatedSubtotal > 0 to handle negative items correctly
-  const finalSubtotal = invoice.items.length > 0 ? calculatedSubtotal : (invoice.subtotal || 0);
-  const finalVat = invoice.items.length > 0 && isVatPayer ? calculatedVat : (isVatPayer ? (invoice.vat || 0) : 0);
-  const finalTotal = invoice.items.length > 0 ? calculatedTotal : (invoice.total || 0);
+  const hasItems = invoice.items.length > 0;
+  const finalSubtotal = hasItems ? calculatedSubtotal : (invoice.subtotal || 0);
+  const finalVat = hasItems && isVatPayer ? calculatedVat : (isVatPayer ? (invoice.vat || 0) : 0);
+  const finalTotal = hasItems ? calculatedTotal : (invoice.total || 0);
   
   // ============================================
   // HLAVNÍ NADPIS - Faktura - daňový doklad s barevným pozadím
