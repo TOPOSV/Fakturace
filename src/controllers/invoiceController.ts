@@ -198,6 +198,8 @@ export const updateInvoice = (req: AuthRequest, res: Response) => {
 
       // If this is an advance invoice being marked as paid and auto_create is enabled
       if (invoice.type === 'advance' && status === 'paid' && invoice.auto_create_regular_invoice === 1 && !invoice.linked_invoice_id) {
+        // Update invoice object with new status for consistency
+        invoice.status = status;
         createRegularInvoiceFromAdvance(invoice, req.userId!, (err, regularInvoiceId) => {
           if (err) {
             console.error('Failed to auto-create regular invoice:', err);
