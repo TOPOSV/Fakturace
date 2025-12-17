@@ -144,7 +144,15 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // Note: We check for items.length > 0 instead of calculatedSubtotal > 0 to handle negative items correctly
   const hasItems = invoice.items.length > 0;
   const finalSubtotal = hasItems ? calculatedSubtotal : (invoice.subtotal || 0);
-  const finalVat = hasItems && isVatPayer ? calculatedVat : (isVatPayer ? (invoice.vat || 0) : 0);
+  
+  // For VAT: use calculated VAT only if we have items and client is VAT payer, otherwise fallback
+  let finalVat = 0;
+  if (hasItems && isVatPayer) {
+    finalVat = calculatedVat;
+  } else if (isVatPayer) {
+    finalVat = invoice.vat || 0;
+  }
+  
   const finalTotal = hasItems ? calculatedTotal : (invoice.total || 0);
   
   // ============================================
