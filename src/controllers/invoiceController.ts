@@ -139,6 +139,8 @@ export const createInvoice = (req: AuthRequest, res: Response) => {
             `;
 
             let itemsInserted = 0;
+            let hasError = false;
+            
             items.forEach((item: any) => {
               const itemTotal = item.quantity * item.unit_price * (1 + (item.vat_rate || 21) / 100);
               db.run(
@@ -147,9 +149,14 @@ export const createInvoice = (req: AuthRequest, res: Response) => {
                 (err) => {
                   if (err) {
                     console.error('Error inserting item:', err);
+                    if (!hasError) {
+                      hasError = true;
+                      return res.status(500).json({ error: 'Failed to insert invoice items' });
+                    }
+                    return;
                   }
                   itemsInserted++;
-                  if (itemsInserted === items.length) {
+                  if (itemsInserted === items.length && !hasError) {
                     res.status(201).json({
                       id: invoiceId,
                       number: invoiceNumber,
@@ -275,7 +282,14 @@ const createRegularInvoiceFromAdvance = (advanceInvoice: any, userId: number, ca
                 VALUES (?, ?, ?, ?, ?, ?)
               `;
 
+              // If no items, call callback immediately
+              if (items.length === 0) {
+                return callback(null, regularInvoiceId);
+              }
+
               let itemsInserted = 0;
+              let hasError = false;
+              
               items.forEach((item: any) => {
                 db.run(
                   itemSql,
@@ -283,19 +297,19 @@ const createRegularInvoiceFromAdvance = (advanceInvoice: any, userId: number, ca
                   (err) => {
                     if (err) {
                       console.error('Error copying item:', err);
+                      if (!hasError) {
+                        hasError = true;
+                        return callback(err);
+                      }
+                      return;
                     }
                     itemsInserted++;
-                    if (itemsInserted === items.length) {
+                    if (itemsInserted === items.length && !hasError) {
                       callback(null, regularInvoiceId);
                     }
                   }
                 );
               });
-
-              // If no items, still call callback
-              if (items.length === 0) {
-                callback(null, regularInvoiceId);
-              }
             }
           );
         }
