@@ -101,7 +101,7 @@ public class Invoice
     public Guid? AdvanceInvoiceId { get; set; }
     
     /// <summary>
-    /// ID běžné faktury (pro zálohou fakturu která byla převedena na běžnou)
+    /// ID běžné faktury (pro zálohovou fakturu která byla převedena na běžnou)
     /// </summary>
     public Guid? RegularInvoiceId { get; set; }
     
