@@ -256,10 +256,13 @@ const createRegularInvoiceFromAdvance = (advanceInvoice: any, userId: number, ca
           const today = new Date().toISOString().split('T')[0];
           const dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
+          // Set status to 'paid' if advance invoice was paid
+          const invoiceStatus = advanceInvoice.status === 'paid' ? 'paid' : 'unpaid';
+          
           const sql = `
             INSERT INTO invoices (user_id, client_id, type, number, issue_date, due_date, tax_date, 
-                                 subtotal, vat_rate, vat_amount, total, currency, notes, linked_invoice_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                 subtotal, vat_rate, vat_amount, total, currency, notes, status, linked_invoice_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `;
 
           const notesText = `Běžná faktura vytvořená ze zálohové faktury č. ${advanceInvoice.number}${advanceInvoice.notes ? '\n' + advanceInvoice.notes : ''}`;
@@ -268,7 +271,7 @@ const createRegularInvoiceFromAdvance = (advanceInvoice: any, userId: number, ca
             sql,
             [userId, advanceInvoice.client_id, 'invoice', invoiceNumber, today, dueDate, today,
              advanceInvoice.subtotal, advanceInvoice.vat_rate, advanceInvoice.vat_amount, 
-             advanceInvoice.total, advanceInvoice.currency, notesText, advanceInvoice.id],
+             advanceInvoice.total, advanceInvoice.currency, notesText, invoiceStatus, advanceInvoice.id],
             function (err) {
               if (err) {
                 return callback(err);
@@ -276,21 +279,33 @@ const createRegularInvoiceFromAdvance = (advanceInvoice: any, userId: number, ca
 
               const regularInvoiceId = this.lastID;
 
-              // Copy invoice items
+              // Copy invoice items and add paid advance line item
               const itemSql = `
                 INSERT INTO invoice_items (invoice_id, description, quantity, unit_price, vat_rate, total)
                 VALUES (?, ?, ?, ?, ?, ?)
               `;
 
+              // All items to insert (original items + paid advance line item)
+              const allItems = [...items];
+              
+              // Add a line item showing the paid advance with price 0
+              allItems.push({
+                description: `Uhrazená záloha č. ${advanceInvoice.number}`,
+                quantity: 1,
+                unit_price: 0,
+                vat_rate: 0,
+                total: 0
+              });
+
               // If no items, call callback immediately
-              if (items.length === 0) {
+              if (allItems.length === 0) {
                 return callback(null, regularInvoiceId);
               }
 
               let itemsInserted = 0;
               let hasError = false;
               
-              items.forEach((item: any) => {
+              allItems.forEach((item: any) => {
                 db.run(
                   itemSql,
                   [regularInvoiceId, item.description, item.quantity, item.unit_price, item.vat_rate, item.total],
@@ -304,7 +319,7 @@ const createRegularInvoiceFromAdvance = (advanceInvoice: any, userId: number, ca
                       return;
                     }
                     itemsInserted++;
-                    if (itemsInserted === items.length && !hasError) {
+                    if (itemsInserted === allItems.length && !hasError) {
                       callback(null, regularInvoiceId);
                     }
                   }
