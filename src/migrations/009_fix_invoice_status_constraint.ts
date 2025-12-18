@@ -69,10 +69,18 @@ export const fixInvoiceStatusConstraint = () => {
                 return reject(err);
               }
 
-              // Copy data from old table to new table
+              // Copy data from old table to new table with explicit column names
               db.run(`
-                INSERT INTO invoices_new 
-                SELECT * FROM invoices
+                INSERT INTO invoices_new (
+                  id, user_id, client_id, type, number, issue_date, due_date, tax_date,
+                  subtotal, vat_rate, vat_amount, total, currency, status, notes,
+                  linked_invoice_id, auto_create_regular_invoice, created_at, deleted_at
+                )
+                SELECT 
+                  id, user_id, client_id, type, number, issue_date, due_date, tax_date,
+                  subtotal, vat_rate, vat_amount, total, currency, status, notes,
+                  linked_invoice_id, auto_create_regular_invoice, created_at, deleted_at
+                FROM invoices
               `, (err) => {
                 if (err) {
                   db.run('ROLLBACK');
