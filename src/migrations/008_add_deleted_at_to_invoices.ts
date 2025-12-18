@@ -1,26 +1,37 @@
-import { Database } from 'sqlite3';
+import { db } from '../config/database';
 
-export const up = (db: Database): Promise<void> => {
+/**
+ * Migration to add deleted_at column to invoices table for soft delete functionality
+ */
+export const addDeletedAtToInvoices = () => {
   return new Promise((resolve, reject) => {
-    db.run(`
-      ALTER TABLE invoices ADD COLUMN deleted_at DATETIME DEFAULT NULL
-    `, (err) => {
-      if (err) {
-        console.error('Error adding deleted_at column:', err);
-        reject(err);
-      } else {
-        console.log('Added deleted_at column to invoices table');
-        resolve();
-      }
+    db.serialize(() => {
+      // First, check if migration is already applied
+      db.get(`SELECT sql FROM sqlite_master WHERE type='table' AND name='invoices'`, (err, row: any) => {
+        if (err) {
+          console.error('Failed to check table schema:', err);
+          return reject(err);
+        }
+
+        // Check if the migration is already applied
+        if (row && row.sql && row.sql.includes('deleted_at')) {
+          console.log('Migration already applied: deleted_at column exists');
+          return resolve(true);
+        }
+
+        // Add deleted_at column to invoices table
+        db.run(`
+          ALTER TABLE invoices ADD COLUMN deleted_at DATETIME DEFAULT NULL
+        `, (err) => {
+          if (err) {
+            console.error('Error adding deleted_at column:', err);
+            return reject(err);
+          }
+          
+          console.log('Migration completed: Added deleted_at column to invoices table');
+          resolve(true);
+        });
+      });
     });
-  });
-};
-
-export const down = (db: Database): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    // SQLite doesn't support DROP COLUMN easily, so we'd need to recreate the table
-    // For simplicity, we'll just log that this migration can't be easily reversed
-    console.log('Reverting deleted_at column migration is not supported in SQLite without recreating the table');
-    resolve();
   });
 };
