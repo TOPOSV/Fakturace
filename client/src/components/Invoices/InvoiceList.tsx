@@ -35,14 +35,7 @@ const InvoiceList: React.FC = () => {
   useEffect(() => {
     // Load invoices on mount and when statusFilter changes (for archive filter)
     loadInvoices();
-  }, []); // Empty dependency array to load on mount only
-
-  useEffect(() => {
-    // Reload when statusFilter changes to handle archive filter (need to include deleted invoices)
-    if (invoices.length > 0 || statusFilter === 'archive') {
-      loadInvoices();
-    }
-  }, [statusFilter]);
+  }, [statusFilter]); // Load on mount and whenever statusFilter changes
 
   useEffect(() => {
     applyFilters();
