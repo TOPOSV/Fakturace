@@ -33,8 +33,9 @@ const InvoiceList: React.FC = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
+    // Reload when statusFilter changes to handle archive filter (need to include deleted invoices)
     loadInvoices();
-  }, []);
+  }, [statusFilter]);
 
   useEffect(() => {
     applyFilters();
@@ -45,7 +46,10 @@ const InvoiceList: React.FC = () => {
 
   const loadInvoices = async () => {
     try {
-      const data = await invoiceService.getAll();
+      // Include deleted invoices when viewing archive
+      const includeDeleted = statusFilter === 'archive';
+      const params = includeDeleted ? { include_deleted: 'true' } : {};
+      const data = await invoiceService.getAll(params);
       setInvoices(data);
     } catch (error) {
       console.error('Failed to load invoices:', error);
@@ -74,7 +78,8 @@ const InvoiceList: React.FC = () => {
     } else if (statusFilter === 'overdue') {
       filtered = filtered.filter(inv => inv.status === 'overdue');
     } else if (statusFilter === 'archive') {
-      filtered = filtered.filter(inv => inv.status === 'cancelled');
+      // Show both cancelled and deleted invoices in archive
+      filtered = filtered.filter(inv => inv.status === 'cancelled' || inv.deleted_at != null);
     }
     
     // Apply column filters
@@ -325,16 +330,23 @@ const InvoiceList: React.FC = () => {
     loadInvoices();
   };
 
-  const getStatusText = (status: string | null | undefined) => {
+  const getStatusText = (invoice: any) => {
     const statusMap: { [key: string]: string } = {
       'draft': 'KONCEPT',
       'sent': 'ODESLÁNO',
       'paid': 'UHRAZENO',
       'unpaid': 'NEUHRAZENO',
       'overdue': 'PO SPLATNOSTI',
-      'cancelled': 'ZRUŠENO'
+      'cancelled': 'ZRUŠENO',
+      'deleted': 'SMAZÁNO'
     };
-    return (status && statusMap[status]) || (status ? status.toUpperCase() : '');
+    
+    // Check if invoice is deleted
+    if (invoice.deleted_at) {
+      return statusMap['deleted'];
+    }
+    
+    return (invoice.status && statusMap[invoice.status]) || (invoice.status ? invoice.status.toUpperCase() : '');
   };
 
   // Pagination
@@ -446,52 +458,58 @@ const InvoiceList: React.FC = () => {
                   <td>{new Date(invoice.due_date).toLocaleDateString('cs-CZ')}</td>
                   <td>{invoice.total?.toFixed(2)} {invoice.currency}</td>
                   <td>{subtotal?.toFixed(2)} {invoice.currency}</td>
-                  <td><span className={`status-badge ${invoice.status}`}>{getStatusText(invoice.status)}</span></td>
+                  <td><span className={`status-badge ${invoice.deleted_at ? 'deleted' : invoice.status}`}>{getStatusText(invoice)}</span></td>
                   <td className="action-buttons">
-                    {/* Show "Create Regular Invoice" button for advance invoices that are paid and don't have linked invoice */}
-                    {invoice.type === 'advance' && invoice.status === 'paid' && !invoice.linked_invoice_id && (
-                      <button
-                        onClick={() => handleCreateRegularFromAdvance(invoice)}
-                        className="action-btn create-regular-btn"
-                        title="Vytvořit běžnou fakturu"
-                        style={{ backgroundColor: '#28a745', fontSize: '1.1em' }}
-                      >
-                        📝
-                      </button>
+                    {/* Disable most actions for deleted invoices, allow only PDF export */}
+                    {!invoice.deleted_at && (
+                      <>
+                        {/* Show "Create Regular Invoice" button for advance invoices that are paid and don't have linked invoice */}
+                        {invoice.type === 'advance' && invoice.status === 'paid' && !invoice.linked_invoice_id && (
+                          <button
+                            onClick={() => handleCreateRegularFromAdvance(invoice)}
+                            className="action-btn create-regular-btn"
+                            title="Vytvořit běžnou fakturu"
+                            style={{ backgroundColor: '#28a745', fontSize: '1.1em' }}
+                          >
+                            📝
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handlePay(invoice)}
+                          className="action-btn pay-btn"
+                          title="Uhradit"
+                          disabled={invoice.status === 'paid'}
+                        >
+                          💳
+                        </button>
+                        <button
+                          onClick={() => handleEdit(invoice)}
+                          className="action-btn edit-btn"
+                          title="Upravit"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => handleCopy(invoice)}
+                          className="action-btn copy-btn"
+                          title="Kopírovat fakturu"
+                        >
+                          📋
+                        </button>
+                        {/* Show "Print Tax Document" button for paid advance invoices - BEFORE PDF export */}
+                        {invoice.type === 'advance' && invoice.status === 'paid' && (
+                          <button
+                            onClick={() => handleExportTaxDocument(invoice)}
+                            className="action-btn tax-doc-btn"
+                            title="Tisk daňového dokladu k přijaté platbě"
+                            style={{ backgroundColor: '#007bff', fontSize: '1.1em' }}
+                          >
+                            🧾
+                          </button>
+                        )}
+                      </>
                     )}
-                    {/* Show "Print Tax Document" button for paid advance invoices */}
-                    {invoice.type === 'advance' && invoice.status === 'paid' && (
-                      <button
-                        onClick={() => handleExportTaxDocument(invoice)}
-                        className="action-btn tax-doc-btn"
-                        title="Tisk daňového dokladu k přijaté platbě"
-                        style={{ backgroundColor: '#007bff', fontSize: '1.1em' }}
-                      >
-                        🧾
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handlePay(invoice)}
-                      className="action-btn pay-btn"
-                      title="Uhradit"
-                      disabled={invoice.status === 'paid'}
-                    >
-                      💳
-                    </button>
-                    <button
-                      onClick={() => handleEdit(invoice)}
-                      className="action-btn edit-btn"
-                      title="Upravit"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={() => handleCopy(invoice)}
-                      className="action-btn copy-btn"
-                      title="Kopírovat fakturu"
-                    >
-                      📋
-                    </button>
+                    {/* PDF export is always available, even for deleted invoices */}
                     <button
                       onClick={() => handleExportPDF(invoice)}
                       className="action-btn pdf-btn"
@@ -499,13 +517,16 @@ const InvoiceList: React.FC = () => {
                     >
                       📄
                     </button>
-                    <button
-                      onClick={() => handleDelete(invoice.id)}
-                      className="action-btn delete-btn"
-                      title="Smazat"
-                    >
-                      🗑️
-                    </button>
+                    {/* Delete button only for non-deleted invoices */}
+                    {!invoice.deleted_at && (
+                      <button
+                        onClick={() => handleDelete(invoice.id)}
+                        className="action-btn delete-btn"
+                        title="Smazat"
+                      >
+                        🗑️
+                      </button>
+                    )}
                   </td>
                 </tr>
               );
