@@ -406,8 +406,9 @@ export const deleteInvoice = (req: AuthRequest, res: Response) => {
       }
 
       // Check if this invoice has linked invoices (is referenced by other invoices)
+      // Only consider non-deleted linked invoices
       db.get(
-        'SELECT COUNT(*) as count FROM invoices WHERE linked_invoice_id = ? AND user_id = ?',
+        'SELECT COUNT(*) as count FROM invoices WHERE linked_invoice_id = ? AND user_id = ? AND deleted_at IS NULL',
         [id, req.userId],
         (err, result: any) => {
           if (err) {
