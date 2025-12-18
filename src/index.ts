@@ -11,6 +11,7 @@ import { addIsVatPayerToClients } from './migrations/005_add_is_vat_payer_to_cli
 import { moveIsVatPayerToUsers } from './migrations/006_move_is_vat_payer_to_users';
 import { migrateAddAdvanceInvoiceType } from './migrations/007_add_advance_invoice_type';
 import { addDeletedAtToInvoices } from './migrations/008_add_deleted_at_to_invoices';
+import { fixInvoiceStatusConstraint } from './migrations/009_fix_invoice_status_constraint';
 
 import authRoutes from './routes/auth';
 import clientRoutes from './routes/clients';
@@ -43,6 +44,7 @@ setTimeout(async () => {
     await moveIsVatPayerToUsers();
     await migrateAddAdvanceInvoiceType();
     await addDeletedAtToInvoices();
+    await fixInvoiceStatusConstraint();
     console.log('All migrations completed successfully');
   } catch (err) {
     console.error('Migration error:', err);

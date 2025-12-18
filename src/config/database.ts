@@ -69,7 +69,7 @@ export const initializeDatabase = () => {
         vat_amount REAL NOT NULL,
         total REAL NOT NULL,
         currency TEXT DEFAULT 'CZK',
-        status TEXT DEFAULT 'unpaid' CHECK(status IN ('unpaid', 'paid', 'cancelled', 'overdue')),
+        status TEXT DEFAULT 'unpaid' CHECK(status IN ('unpaid', 'paid', 'cancelled', 'overdue', 'draft', 'sent')),
         notes TEXT,
         linked_invoice_id INTEGER,
         auto_create_regular_invoice INTEGER DEFAULT 0,
