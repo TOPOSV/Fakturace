@@ -225,13 +225,23 @@ const Dashboard: React.FC = () => {
               <tr key={invoice.id}>
                 <td>{invoice.number}</td>
                 <td>{invoice.client_name}</td>
-                <td>{invoice.type === 'invoice' ? 'Faktura' : invoice.type === 'proforma' ? 'Záloha' : 'Nabídka'}</td>
+                <td>{
+                  invoice.type === 'invoice' ? 'Faktura' : 
+                  invoice.type === 'received' ? 'Přijatá faktura' :
+                  invoice.type === 'advance' ? 'Zálohová faktura' :
+                  invoice.type === 'proforma' ? 'Záloha' : 
+                  'Nabídka'
+                }</td>
                 <td>{new Date(invoice.issue_date).toLocaleDateString('cs-CZ')}</td>
                 <td>{new Date(invoice.due_date).toLocaleDateString('cs-CZ')}</td>
                 <td>{invoice.total?.toFixed(2)} {invoice.currency}</td>
                 <td>
                   <span className={`status-badge ${invoice.status}`}>
-                    {invoice.status === 'paid' ? 'Zaplaceno' : invoice.status === 'unpaid' ? 'Nezaplaceno' : invoice.status}
+                    {invoice.status === 'paid' ? 'Zaplaceno' : 
+                     invoice.status === 'unpaid' ? 'Nezaplaceno' : 
+                     invoice.status === 'draft' ? 'Koncept' :
+                     invoice.status === 'sent' ? 'Odesláno' :
+                     invoice.status}
                   </span>
                 </td>
               </tr>
