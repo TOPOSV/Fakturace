@@ -504,6 +504,22 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   yPos = doc.lastAutoTable.finalY + 5;
   
   // ============================================
+  // PAGE BOUNDARY HELPER FUNCTION
+  // ============================================
+  const pageHeight = 297; // A4 height in mm
+  const bottomMargin = 20; // Bottom margin
+  const maxY = pageHeight - bottomMargin;
+  
+  // Function to check if we need a new page and add one if necessary
+  const checkAndAddPage = (requiredSpace: number): number => {
+    if (yPos + requiredSpace > maxY) {
+      doc.addPage();
+      return margin + 10; // Return to top margin on new page
+    }
+    return yPos;
+  };
+  
+  // ============================================
   // TEXT POD TABULKOU (drobne pismo) - s ceskymi znaky
   // ============================================
   doc.setFontSize(8);
@@ -511,8 +527,13 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.setTextColor(colors.mediumGray[0], colors.mediumGray[1], colors.mediumGray[2]);
   const disclaimerText = 'Zboží zůstává až do úplného uhrazení majetkem dodavatele. Při zpožděné úhradě vám budeme účtovat penále 0,05 % za každý započatý den prodlení.';
   const disclaimerLines = doc.splitTextToSize(disclaimerText, contentWidth);
+  
+  // Check if disclaimer fits on current page
+  const disclaimerHeight = disclaimerLines.length * 3 + 5;
+  yPos = checkAndAddPage(disclaimerHeight);
+  
   doc.text(disclaimerLines, margin, yPos);
-  yPos += disclaimerLines.length * 3 + 5;
+  yPos += disclaimerHeight;
   
   safeSetFont('normal');
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
@@ -522,6 +543,9 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // Only show if client is VAT payer
   // ============================================
   if (isVatPayer) {
+    // Check if VAT summary table fits on current page (estimated height ~15mm)
+    yPos = checkAndAddPage(15);
+    
     const subtotalAmount = `${formatCzechNumber(finalSubtotal)} Kč`;
     const vatAmount = `${formatCzechNumber(finalVat)} Kč`;
     const totalAmountFormatted = `${formatCzechNumber(finalTotal)} Kč`;
@@ -570,6 +594,10 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ============================================
   // CELKEM K UHRADE - Below VAT table (or items table if no VAT) - RIGHT ALIGNED
   // ============================================
+  // Check if total box and stamp section fit on current page
+  // Total box (10mm) + spacing (5mm) + stamp header (5mm) + stamp box (30mm) + spacing (5mm) = ~55mm
+  yPos = checkAndAddPage(55);
+  
   const totalBoxY = yPos + 5; // Position below VAT table or items table
   const totalBoxWidth = 80; // Width of the box
   const totalBoxX = pageWidth - margin - totalBoxWidth; // Right-aligned
@@ -716,18 +744,34 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   // ============================================
   // DOLNI CAST - ZAKONCENI
   // ============================================
-  const bottomY = 270; // Pozice v dolni casti stranky
+  // Position footer dynamically - either at bottom of page or after content if enough space
+  const footerHeight = 20; // Height needed for footer
+  const totalPages = doc.internal.pages.length - 1; // Get total page count (subtract 1 for jsPDF internal page)
+  const footerY = Math.max(stampYPos + 35, pageHeight - bottomMargin - footerHeight + 8);
   
   doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
   doc.setFontSize(8);
   safeSetFont('normal');
   const currentDate = new Date().toLocaleDateString('cs-CZ');
   const userName = userData.company_name || 'Systém';
-  doc.text(`Vytiskl(a): ${userName}, ${currentDate}`, margin, bottomY + 8);
+  doc.text(`Vytiskl(a): ${userName}, ${currentDate}`, margin, footerY);
   
   doc.setTextColor(colors.primaryLight[0], colors.primaryLight[1], colors.primaryLight[2]);
   safeSetFont('italic');
-  doc.text('Vystaveno v online fakturační službě Fakturace', margin, bottomY + 12);
+  doc.text('Vystaveno v online fakturační službě Fakturace', margin, footerY + 4);
+  
+  // Add page numbers on all pages (if more than one page)
+  if (totalPages > 1) {
+    const pageCount = totalPages;
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      safeSetFont('normal');
+      doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
+      // Position page number at bottom right
+      doc.text(`Strana ${i} z ${pageCount}`, pageWidth - margin - 30, pageHeight - bottomMargin + 5);
+    }
+  }
   
   // Ulozeni PDF
   const fileName = isTaxDocument && invoice.type === 'advance' 
