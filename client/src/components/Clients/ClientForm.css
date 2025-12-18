@@ -178,3 +178,7 @@ textarea {
   color: #777;
   font-style: italic;
 }
+
+.btn-remove-item:not(:disabled):hover {
+  background: #c82333 !important;
+}
