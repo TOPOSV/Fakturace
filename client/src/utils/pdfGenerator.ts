@@ -52,7 +52,7 @@ interface UserData {
   stamp?: string;
 }
 
-export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserData) => {
+export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserData, isTaxDocument: boolean = false) => {
   // A4 format with 20mm margins - enable UTF-8 support
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -169,9 +169,15 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.setTextColor(255, 255, 255);
   
   // Czech text with proper diacritics
-  const typeText = invoice.type === 'invoice' ? 'Vydaná faktura - daňový doklad' : 
-                   invoice.type === 'received' ? 'Přijatá faktura - daňový doklad' : 
-                   invoice.type === 'advance' ? 'Zálohová faktura - NENÍ daňový doklad' : 'Faktura';
+  let typeText = invoice.type === 'invoice' ? 'Vydaná faktura - daňový doklad' : 
+                 invoice.type === 'received' ? 'Přijatá faktura - daňový doklad' : 
+                 invoice.type === 'advance' ? 'Zálohová faktura - NENÍ daňový doklad' : 'Faktura';
+  
+  // Override for tax document variant of paid advance invoice
+  if (isTaxDocument && invoice.type === 'advance') {
+    typeText = 'Daňový doklad k přijaté platbě';
+  }
+  
   doc.text(typeText, margin, 15);
   
   // Reset text color to dark
@@ -724,5 +730,8 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
   doc.text('Vystaveno v online fakturační službě Fakturace', margin, bottomY + 12);
   
   // Ulozeni PDF
-  doc.save(`Faktura-${invoice.number}.pdf`);
+  const fileName = isTaxDocument && invoice.type === 'advance' 
+    ? `Danovy-doklad-${invoice.number}.pdf`
+    : `Faktura-${invoice.number}.pdf`;
+  doc.save(fileName);
 };
