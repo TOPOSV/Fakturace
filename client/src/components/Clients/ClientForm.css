@@ -182,3 +182,84 @@ textarea {
 .btn-remove-item:not(:disabled):hover {
   background: #c82333 !important;
 }
+
+/* Light background sections */
+.section-light-bg {
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+}
+
+.section-light-bg h3 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+}
+
+/* Invoice item */
+.invoice-item {
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 5px;
+  border: 1px solid #e0e0e0;
+}
+
+/* Summary section */
+.invoice-summary {
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+/* Price mode selector */
+.price-mode-selector {
+  background: #f9f9f9;
+  padding: 8px 15px;
+  border-radius: 5px;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: nowrap;
+}
+
+/* Auto-create section */
+.auto-create-section {
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 5px;
+  border: 1px solid #e0e0e0;
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] .section-light-bg {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .section-light-bg h3 {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .invoice-summary {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+[data-theme="dark"] .invoice-summary span,
+[data-theme="dark"] .invoice-summary strong {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .price-mode-selector {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .auto-create-section {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+}
