@@ -11,7 +11,7 @@ export const getStatistics = (req: AuthRequest, res: Response) => {
     'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'
   ];
 
-  // Get all invoices for the specified year
+  // Get all invoices for the specified year (excluding deleted)
   const invoiceSql = `
     SELECT 
       id,
@@ -20,7 +20,7 @@ export const getStatistics = (req: AuthRequest, res: Response) => {
       total,
       vat_amount
     FROM invoices
-    WHERE user_id = ? AND strftime('%Y', issue_date) = ?
+    WHERE user_id = ? AND strftime('%Y', issue_date) = ? AND deleted_at IS NULL
     ORDER BY issue_date ASC
   `;
 
@@ -94,7 +94,7 @@ export const getStatistics = (req: AuthRequest, res: Response) => {
       const yearlyIncome: { [key: number]: number } = {};
       const yearlyExpenses: { [key: number]: number } = {};
 
-      // Fetch all invoices from last 5 years
+      // Fetch all invoices from last 5 years (excluding deleted)
       const yearRangeSql = `
         SELECT 
           issue_date,
@@ -102,7 +102,7 @@ export const getStatistics = (req: AuthRequest, res: Response) => {
           total,
           vat_amount
         FROM invoices
-        WHERE user_id = ? AND strftime('%Y', issue_date) >= ? AND strftime('%Y', issue_date) <= ?
+        WHERE user_id = ? AND strftime('%Y', issue_date) >= ? AND strftime('%Y', issue_date) <= ? AND deleted_at IS NULL
       `;
 
       db.all(yearRangeSql, [req.userId, (currentYear - 4).toString(), currentYear.toString()], (err, allInvoices: any[]) => {
@@ -150,7 +150,7 @@ const getRecentInvoices = (req: AuthRequest, res: Response, chartData: any[]) =>
     SELECT i.*, c.company_name as client_name
     FROM invoices i
     LEFT JOIN clients c ON i.client_id = c.id
-    WHERE i.user_id = ?
+    WHERE i.user_id = ? AND i.deleted_at IS NULL
     ORDER BY i.created_at DESC
     LIMIT 10
   `;
@@ -187,11 +187,11 @@ export const getDashboard = (req: AuthRequest, res: Response) => {
       return res.status(500).json({ error: 'Failed to fetch dashboard data' });
     }
 
-    // Get overdue invoices
+    // Get overdue invoices (excluding deleted)
     const overdueSql = `
       SELECT COUNT(*) as count, SUM(total) as amount
       FROM invoices
-      WHERE user_id = ? AND status = 'unpaid' AND due_date < date('now')
+      WHERE user_id = ? AND status = 'unpaid' AND due_date < date('now') AND deleted_at IS NULL
     `;
 
     db.get(overdueSql, [req.userId], (err, overdueData: any) => {
@@ -199,12 +199,12 @@ export const getDashboard = (req: AuthRequest, res: Response) => {
         return res.status(500).json({ error: 'Failed to fetch overdue invoices' });
       }
 
-      // Get recent invoices
+      // Get recent invoices (excluding deleted)
       const recentSql = `
         SELECT i.*, c.company_name as client_name
         FROM invoices i
         LEFT JOIN clients c ON i.client_id = c.id
-        WHERE i.user_id = ?
+        WHERE i.user_id = ? AND i.deleted_at IS NULL
         ORDER BY i.created_at DESC
         LIMIT 10
       `;
