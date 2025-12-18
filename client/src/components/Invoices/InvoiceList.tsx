@@ -281,6 +281,40 @@ const InvoiceList: React.FC = () => {
     }
   };
 
+  const handleExportTaxDocument = async (invoice: any) => {
+    try {
+      // Fetch full invoice details with items
+      const fullInvoiceResponse = await axios.get(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/invoices/${invoice.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      
+      const fullInvoice = fullInvoiceResponse.data;
+      
+      // Fetch user profile data
+      const userResponse = await axios.get(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/auth/profile`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      
+      const userData = userResponse.data;
+      
+      // Generate and download PDF as tax document
+      await generateInvoicePDF(fullInvoice, userData, true);
+    } catch (error) {
+      console.error('Failed to export tax document:', error);
+      alert('Nepodařilo se exportovat daňový doklad do PDF');
+    }
+  };
+
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingInvoice(null);
@@ -423,6 +457,17 @@ const InvoiceList: React.FC = () => {
                         style={{ backgroundColor: '#28a745', fontSize: '1.1em' }}
                       >
                         📝
+                      </button>
+                    )}
+                    {/* Show "Print Tax Document" button for paid advance invoices */}
+                    {invoice.type === 'advance' && invoice.status === 'paid' && (
+                      <button
+                        onClick={() => handleExportTaxDocument(invoice)}
+                        className="action-btn tax-doc-btn"
+                        title="Tisk daňového dokladu k přijaté platbě"
+                        style={{ backgroundColor: '#007bff', fontSize: '1.1em' }}
+                      >
+                        🧾
                       </button>
                     )}
                     <button
