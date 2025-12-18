@@ -326,6 +326,11 @@ const InvoiceList: React.FC = () => {
   };
 
   const getStatusText = (status: string) => {
+    // Handle null, undefined, or empty status
+    if (!status) {
+      return 'NEZNÁMÝ';
+    }
+    
     const statusMap: { [key: string]: string } = {
       'draft': 'KONCEPT',
       'sent': 'ODESLÁNO',
