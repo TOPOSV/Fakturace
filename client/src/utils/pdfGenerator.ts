@@ -140,10 +140,20 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     calculatedTotal += subtotal + vatAmount;
   });
   
-  // Use calculated values if available, otherwise fall back to invoice values
-  const finalSubtotal = calculatedSubtotal > 0 ? calculatedSubtotal : (invoice.subtotal || 0);
-  const finalVat = isVatPayer ? (calculatedVat > 0 ? calculatedVat : (invoice.vat || 0)) : 0;
-  const finalTotal = calculatedTotal > 0 ? calculatedTotal : (invoice.total || 0);
+  // Use calculated values from items if we have items, otherwise fall back to invoice values
+  // Note: We check for items.length > 0 instead of calculatedSubtotal > 0 to handle negative items correctly
+  const hasItems = invoice.items.length > 0;
+  const finalSubtotal = hasItems ? calculatedSubtotal : (invoice.subtotal || 0);
+  
+  // For VAT: use calculated VAT only if we have items and client is VAT payer, otherwise fallback
+  let finalVat = 0;
+  if (hasItems && isVatPayer) {
+    finalVat = calculatedVat;
+  } else if (isVatPayer) {
+    finalVat = invoice.vat || 0;
+  }
+  
+  const finalTotal = hasItems ? calculatedTotal : (invoice.total || 0);
   
   // ============================================
   // HLAVNÍ NADPIS - Faktura - daňový doklad s barevným pozadím
