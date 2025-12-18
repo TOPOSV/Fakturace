@@ -33,8 +33,15 @@ const InvoiceList: React.FC = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
-    // Reload when statusFilter changes to handle archive filter (need to include deleted invoices)
+    // Load invoices on mount and when statusFilter changes (for archive filter)
     loadInvoices();
+  }, []); // Empty dependency array to load on mount only
+
+  useEffect(() => {
+    // Reload when statusFilter changes to handle archive filter (need to include deleted invoices)
+    if (invoices.length > 0 || statusFilter === 'archive') {
+      loadInvoices();
+    }
   }, [statusFilter]);
 
   useEffect(() => {
