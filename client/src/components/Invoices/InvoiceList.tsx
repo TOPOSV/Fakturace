@@ -325,7 +325,7 @@ const InvoiceList: React.FC = () => {
     loadInvoices();
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string | null | undefined) => {
     const statusMap: { [key: string]: string } = {
       'draft': 'KONCEPT',
       'sent': 'ODESLÁNO',
@@ -334,7 +334,7 @@ const InvoiceList: React.FC = () => {
       'overdue': 'PO SPLATNOSTI',
       'cancelled': 'ZRUŠENO'
     };
-    return statusMap[status] || status.toUpperCase();
+    return (status && statusMap[status]) || (status ? status.toUpperCase() : '');
   };
 
   // Pagination
