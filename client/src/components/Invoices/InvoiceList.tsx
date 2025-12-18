@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { invoiceService } from '../../services';
 import InvoiceForm from './InvoiceForm';
 import { generateInvoicePDF } from '../../utils/pdfGenerator';
@@ -32,19 +32,7 @@ const InvoiceList: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  useEffect(() => {
-    // Reload when statusFilter changes to handle archive filter (need to include deleted invoices)
-    loadInvoices();
-  }, [statusFilter]);
-
-  useEffect(() => {
-    applyFilters();
-    // Save filters to localStorage whenever they change
-    localStorage.setItem('invoiceTypeFilter', typeFilter);
-    localStorage.setItem('invoiceStatusFilter', statusFilter);
-  }, [invoices, filters, typeFilter, statusFilter]);
-
-  const loadInvoices = async () => {
+  const loadInvoices = useCallback(async () => {
     try {
       // Include deleted invoices when viewing archive
       const includeDeleted = statusFilter === 'archive';
@@ -56,9 +44,14 @@ const InvoiceList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
 
-  const applyFilters = () => {
+  useEffect(() => {
+    // Load invoices on mount and when statusFilter changes (for archive filter)
+    loadInvoices();
+  }, [loadInvoices]); // Depend on loadInvoices which depends on statusFilter
+
+  const applyFilters = useCallback(() => {
     let filtered = [...invoices];
     
     // Apply type filter (Vydané/Přijaté faktury)
@@ -118,7 +111,14 @@ const InvoiceList: React.FC = () => {
     
     setFilteredInvoices(filtered);
     setCurrentPage(1);
-  };
+  }, [invoices, filters, typeFilter, statusFilter]);
+
+  useEffect(() => {
+    applyFilters();
+    // Save filters to localStorage whenever they change
+    localStorage.setItem('invoiceTypeFilter', typeFilter);
+    localStorage.setItem('invoiceStatusFilter', statusFilter);
+  }, [applyFilters, typeFilter, statusFilter]);
 
   const handleFilterChange = (field: string, value: string) => {
     setFilters({ ...filters, [field]: value });

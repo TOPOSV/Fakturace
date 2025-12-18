@@ -402,7 +402,8 @@ export const deleteInvoice = (req: AuthRequest, res: Response) => {
       }
       
       if (invoice.deleted_at) {
-        return res.status(400).json({ error: 'Invoice is already deleted' });
+        // Invoice is already deleted, treat as successful (idempotent operation)
+        return res.json({ message: 'Invoice deleted successfully' });
       }
 
       // Check if this invoice has linked invoices (is referenced by other invoices)
