@@ -59,7 +59,7 @@ export const initializeDatabase = () => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
         client_id INTEGER NOT NULL,
-        type TEXT NOT NULL CHECK(type IN ('invoice', 'received', 'proforma', 'quote')),
+        type TEXT NOT NULL CHECK(type IN ('invoice', 'received', 'proforma', 'quote', 'advance')),
         number TEXT NOT NULL,
         issue_date DATE NOT NULL,
         due_date DATE NOT NULL,
@@ -71,9 +71,12 @@ export const initializeDatabase = () => {
         currency TEXT DEFAULT 'CZK',
         status TEXT DEFAULT 'unpaid' CHECK(status IN ('unpaid', 'paid', 'cancelled', 'overdue')),
         notes TEXT,
+        linked_invoice_id INTEGER,
+        auto_create_regular_invoice INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id),
-        FOREIGN KEY (client_id) REFERENCES clients(id)
+        FOREIGN KEY (client_id) REFERENCES clients(id),
+        FOREIGN KEY (linked_invoice_id) REFERENCES invoices(id)
       )
     `);
 

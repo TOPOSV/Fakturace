@@ -46,7 +46,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
     phone: '',
   });
   const [lookingUpIco, setLookingUpIco] = useState(false);
-  const [pricesIncludeVat, setPricesIncludeVat] = useState(sourceData?.prices_include_vat !== undefined ? sourceData.prices_include_vat : true);
+  // Load saved price mode preference from localStorage
+  const savedPriceMode = localStorage.getItem('pricesIncludeVat');
+  const initialPriceMode = sourceData?.prices_include_vat !== undefined 
+    ? sourceData.prices_include_vat 
+    : (savedPriceMode !== null ? savedPriceMode === 'true' : true);
+  const [pricesIncludeVat, setPricesIncludeVat] = useState(initialPriceMode);
 
   useEffect(() => {
     loadClients();
@@ -161,6 +166,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
     setItems(newItems);
+  };
+
+  const handlePricesModeChange = (includeVat: boolean) => {
+    setPricesIncludeVat(includeVat);
+    // Save preference to localStorage
+    localStorage.setItem('pricesIncludeVat', includeVat.toString());
   };
 
   const addItem = () => {
@@ -461,7 +472,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
                   <input
                     type="radio"
                     checked={!pricesIncludeVat}
-                    onChange={() => setPricesIncludeVat(false)}
+                    onChange={() => handlePricesModeChange(false)}
                     style={{ marginRight: '7px', cursor: 'pointer' }}
                   />
                   Ceny bez DPH
@@ -470,7 +481,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
                   <input
                     type="radio"
                     checked={pricesIncludeVat}
-                    onChange={() => setPricesIncludeVat(true)}
+                    onChange={() => handlePricesModeChange(true)}
                     style={{ marginRight: '7px', cursor: 'pointer' }}
                   />
                   Ceny s DPH
@@ -572,7 +583,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
               value={formData.notes}
               onChange={handleChange}
               placeholder="Interní poznámka..."
-              rows={2}
+              rows={1}
+              style={{ resize: 'vertical', minHeight: '42px' }}
             />
           </div>
 
