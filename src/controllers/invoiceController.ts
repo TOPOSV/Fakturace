@@ -264,6 +264,11 @@ export const updateInvoice = (req: AuthRequest, res: Response) => {
     // Add WHERE clause params
     params.push(id, req.userId);
     
+    // Ensure we have at least one field to update
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+    
     const sql = `UPDATE invoices SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`;
 
     db.run(sql, params, function (err) {
@@ -291,6 +296,7 @@ export const updateInvoice = (req: AuthRequest, res: Response) => {
           
           let itemsInserted = 0;
           let hasError = false;
+          let responseSent = false;
           
           items.forEach((item: any) => {
             const itemTotal = item.quantity * item.unit_price * (1 + (item.vat_rate || 21) / 100);
@@ -298,16 +304,15 @@ export const updateInvoice = (req: AuthRequest, res: Response) => {
               itemSql,
               [id, item.description, item.quantity, item.unit_price, item.vat_rate || 21, itemTotal],
               (err) => {
-                if (err) {
+                if (err && !responseSent) {
                   console.error('Error inserting item:', err);
-                  if (!hasError) {
-                    hasError = true;
-                    return res.status(500).json({ error: 'Failed to insert invoice items' });
-                  }
-                  return;
+                  hasError = true;
+                  responseSent = true;
+                  return res.status(500).json({ error: 'Failed to insert invoice items' });
                 }
                 itemsInserted++;
-                if (itemsInserted === items.length && !hasError) {
+                if (itemsInserted === items.length && !hasError && !responseSent) {
+                  responseSent = true;
                   checkAdvanceInvoiceAutoCreate();
                 }
               }
