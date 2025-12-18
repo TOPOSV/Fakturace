@@ -11,6 +11,8 @@ interface InvoiceFormProps {
 
 const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, copyData }) => {
   const [clients, setClients] = useState<any[]>([]);
+  const [filteredClients, setFilteredClients] = useState<any[]>([]);
+  const [clientSearch, setClientSearch] = useState('');
   
   // Determine if we're copying (copyData provided) or editing (invoice provided)
   const sourceData = copyData || invoice;
@@ -58,9 +60,27 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
     try {
       const data = await clientService.getAll();
       setClients(data);
+      setFilteredClients(data);
     } catch (error) {
       console.error('Failed to load clients:', error);
     }
+  };
+
+  const handleClientSearch = (searchTerm: string) => {
+    setClientSearch(searchTerm);
+    if (!searchTerm.trim()) {
+      setFilteredClients(clients);
+      return;
+    }
+    
+    const term = searchTerm.toLowerCase();
+    const filtered = clients.filter(client => 
+      client.company_name?.toLowerCase().includes(term) ||
+      client.ico?.toLowerCase().includes(term) ||
+      client.dic?.toLowerCase().includes(term) ||
+      client.email?.toLowerCase().includes(term)
+    );
+    setFilteredClients(filtered);
   };
 
   const loadInvoiceItems = async (invoiceId: number) => {
@@ -217,7 +237,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '1000px' }}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '1200px' }}>
         <div className="modal-header">
           <h2>{invoice ? 'Upravit fakturu' : 'Nová faktura'}</h2>
           <button className="close-btn" onClick={onClose}>×</button>
@@ -228,6 +248,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
         <form onSubmit={handleSubmit}>
           <div className="form-row">
             <div className="form-group flex-2">
+              <label>Vyhledat klienta</label>
+              <input
+                type="text"
+                placeholder="Hledat podle názvu, IČO, DIČ nebo emailu..."
+                value={clientSearch}
+                onChange={(e) => handleClientSearch(e.target.value)}
+                style={{ marginBottom: '10px' }}
+              />
               <label>Klient *</label>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <select
@@ -238,7 +266,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
                   style={{ flex: 1 }}
                 >
                   <option value="">Vyberte klienta</option>
-                  {clients.map(client => (
+                  {filteredClients.map(client => (
                     <option key={client.id} value={client.id}>
                       {client.company_name} {client.ico && `(IČO: ${client.ico})`}
                     </option>
@@ -271,20 +299,23 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
 
           {/* Show auto-create checkbox only for advance invoices */}
           {formData.type === 'advance' && (
-            <div className="form-row">
-              <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={formData.auto_create_regular_invoice === 1}
-                    onChange={(e) => setFormData({ ...formData, auto_create_regular_invoice: e.target.checked ? 1 : 0 })}
-                  />
-                  <span>Automaticky vytvořit běžnou fakturu po zaplacení</span>
-                </label>
-                <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
-                  Po označení zálohové faktury jako zaplacené bude automaticky vytvořena běžná daňová faktura
-                </small>
-              </div>
+            <div className="form-group" style={{ background: '#f9f9f9', padding: '15px', borderRadius: '5px', border: '1px solid #e0e0e0' }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', margin: 0 }}>
+                <input
+                  type="checkbox"
+                  checked={formData.auto_create_regular_invoice === 1}
+                  onChange={(e) => setFormData({ ...formData, auto_create_regular_invoice: e.target.checked ? 1 : 0 })}
+                  style={{ marginTop: '3px', width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                <div style={{ flex: 1 }}>
+                  <span style={{ display: 'block', fontWeight: '500', color: '#333', marginBottom: '4px' }}>
+                    Automaticky vytvořit běžnou fakturu po zaplacení
+                  </span>
+                  <small style={{ display: 'block', color: '#666', fontSize: '13px', lineHeight: '1.4' }}>
+                    Po označení zálohové faktury jako zaplacené bude automaticky vytvořena běžná daňová faktura
+                  </small>
+                </div>
+              </label>
             </div>
           )}
 
@@ -414,44 +445,53 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
           </div>
 
           <div className="form-group">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <label style={{ margin: 0 }}>Položky faktury *</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <label style={{ margin: 0, fontSize: '14px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+              <label style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Položky faktury *</label>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '20px',
+                background: '#f9f9f9',
+                padding: '8px 15px',
+                borderRadius: '5px',
+                border: '1px solid #e0e0e0'
+              }}>
+                <label style={{ margin: 0, fontSize: '14px', display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: '500' }}>
                   <input
                     type="radio"
                     checked={!pricesIncludeVat}
                     onChange={() => setPricesIncludeVat(false)}
-                    style={{ marginRight: '5px' }}
+                    style={{ marginRight: '7px', cursor: 'pointer' }}
                   />
                   Ceny bez DPH
                 </label>
-                <label style={{ margin: 0, fontSize: '14px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <label style={{ margin: 0, fontSize: '14px', display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: '500' }}>
                   <input
                     type="radio"
                     checked={pricesIncludeVat}
                     onChange={() => setPricesIncludeVat(true)}
-                    style={{ marginRight: '5px' }}
+                    style={{ marginRight: '7px', cursor: 'pointer' }}
                   />
                   Ceny s DPH
                 </label>
               </div>
             </div>
             {items.map((item: any, index: number) => (
-              <div key={index} className="invoice-item" style={{ marginBottom: '10px', padding: '10px', background: '#f9f9f9', borderRadius: '5px' }}>
-                <div className="form-row">
-                  <div className="form-group flex-2">
-                    <label style={{ fontSize: '12px', marginBottom: '3px', display: 'block', color: '#666' }}>Název položky</label>
+              <div key={index} className="invoice-item" style={{ marginBottom: '10px', padding: '10px', background: '#f9f9f9', borderRadius: '5px', border: '1px solid #e0e0e0' }}>
+                <div className="form-row" style={{ alignItems: 'flex-end' }}>
+                  <div className="form-group flex-2" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: '12px', marginBottom: '5px', display: 'block', color: '#666', fontWeight: '500' }}>Název položky</label>
                     <input
                       type="text"
                       placeholder="Popis položky"
                       value={item.description}
                       onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                       required
+                      style={{ height: '42px' }}
                     />
                   </div>
-                  <div className="form-group" style={{ flex: '0 0 80px' }}>
-                    <label style={{ fontSize: '12px', marginBottom: '3px', display: 'block', color: '#666' }}>Množství</label>
+                  <div className="form-group" style={{ flex: '0 0 80px', marginBottom: 0 }}>
+                    <label style={{ fontSize: '12px', marginBottom: '5px', display: 'block', color: '#666', fontWeight: '500' }}>Množství</label>
                     <input
                       type="number"
                       placeholder="Ks"
@@ -460,10 +500,11 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
                       min="0.01"
                       step="0.01"
                       required
+                      style={{ height: '42px' }}
                     />
                   </div>
-                  <div className="form-group flex-1">
-                    <label style={{ fontSize: '12px', marginBottom: '3px', display: 'block', color: '#666' }}>
+                  <div className="form-group flex-1" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: '12px', marginBottom: '5px', display: 'block', color: '#666', fontWeight: '500' }}>
                       Cena/ks {pricesIncludeVat ? '(s DPH)' : '(bez DPH)'}
                     </label>
                     <input
@@ -474,29 +515,49 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
                       min="0"
                       step="0.01"
                       required
+                      style={{ height: '42px' }}
                     />
                   </div>
-                  <div className="form-group" style={{ flex: '0 0 90px' }}>
-                    <label style={{ fontSize: '12px', marginBottom: '3px', display: 'block', color: '#666' }}>DPH %</label>
+                  <div className="form-group" style={{ flex: '0 0 90px', marginBottom: 0 }}>
+                    <label style={{ fontSize: '12px', marginBottom: '5px', display: 'block', color: '#666', fontWeight: '500' }}>DPH %</label>
                     <select
                       value={item.vat_rate}
                       onChange={(e) => handleItemChange(index, 'vat_rate', e.target.value)}
                       required
-                      style={{ padding: '10px' }}
+                      style={{ padding: '10px', height: '42px' }}
                     >
                       <option value="21">21%</option>
                       <option value="12">12%</option>
                       <option value="0">0%</option>
                     </select>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeItem(index)}
-                    style={{ padding: '10px', background: '#dc3545', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', marginTop: '20px' }}
-                    disabled={items.length === 1}
-                  >
-                    ×
-                  </button>
+                  <div style={{ flex: '0 0 auto', marginBottom: 0 }}>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      style={{ 
+                        padding: '0',
+                        width: '42px',
+                        height: '42px',
+                        background: '#dc3545', 
+                        color: 'white', 
+                        border: 'none', 
+                        borderRadius: '5px', 
+                        cursor: 'pointer',
+                        fontSize: '20px',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'background 0.3s'
+                      }}
+                      disabled={items.length === 1}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#c82333'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = items.length === 1 ? '#ccc' : '#dc3545'}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
