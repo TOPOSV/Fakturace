@@ -140,71 +140,86 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
         
-        <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={dashboardData?.chartData || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-            <defs>
-              <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#43A047" stopOpacity={0.1}/>
-                <stop offset="95%" stopColor="#43A047" stopOpacity={0}/>
-              </linearGradient>
-              <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#E53935" stopOpacity={0.1}/>
-                <stop offset="95%" stopColor="#E53935" stopOpacity={0}/>
-              </linearGradient>
-              <linearGradient id="colorDifference" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#1E88E5" stopOpacity={0.1}/>
-                <stop offset="95%" stopColor="#1E88E5" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E0" />
-            <XAxis 
-              dataKey="period" 
-              stroke="#666"
-              style={{ fontSize: '12px', fontWeight: 500 }}
-            />
-            <YAxis 
-              stroke="#666"
-              style={{ fontSize: '12px' }}
-              tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend 
-              wrapperStyle={{ paddingTop: '20px' }}
-              iconType="circle"
-            />
-            <Line 
-              type="monotone" 
-              dataKey="income" 
-              stroke="#43A047" 
-              strokeWidth={3}
-              dot={{ fill: '#43A047', strokeWidth: 2, r: 5 }}
-              activeDot={{ r: 7 }}
-              name="Vydané faktury"
-              fill="url(#colorIncome)"
-            />
-            <Line 
-              type="monotone" 
-              dataKey="expenses" 
-              stroke="#E53935" 
-              strokeWidth={3}
-              dot={{ fill: '#E53935', strokeWidth: 2, r: 5 }}
-              activeDot={{ r: 7 }}
-              name="Přijaté faktury"
-              fill="url(#colorExpense)"
-            />
-            <Line 
-              type="monotone" 
-              dataKey="difference" 
-              stroke="#1E88E5" 
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              dot={{ fill: '#1E88E5', strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 6 }}
-              name="Rozdíl"
-              fill="url(#colorDifference)"
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        {dashboardData?.chartData && dashboardData.chartData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={dashboardData.chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+              <defs>
+                <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#43A047" stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor="#43A047" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#E53935" stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor="#E53935" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorDifference" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#1E88E5" stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor="#1E88E5" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E0" />
+              <XAxis 
+                dataKey="period" 
+                stroke="#666"
+                style={{ fontSize: '12px', fontWeight: 500 }}
+              />
+              <YAxis 
+                stroke="#666"
+                style={{ fontSize: '12px' }}
+                tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend 
+                wrapperStyle={{ paddingTop: '20px' }}
+                iconType="circle"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="income" 
+                stroke="#43A047" 
+                strokeWidth={3}
+                dot={{ fill: '#43A047', strokeWidth: 2, r: 5 }}
+                activeDot={{ r: 7 }}
+                name="Vydané faktury"
+                fill="url(#colorIncome)"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="expenses" 
+                stroke="#E53935" 
+                strokeWidth={3}
+                dot={{ fill: '#E53935', strokeWidth: 2, r: 5 }}
+                activeDot={{ r: 7 }}
+                name="Přijaté faktury"
+                fill="url(#colorExpense)"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="difference" 
+                stroke="#1E88E5" 
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={{ fill: '#1E88E5', strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6 }}
+                name="Rozdíl"
+                fill="url(#colorDifference)"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div style={{ 
+            height: '400px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            fontSize: '16px',
+            color: '#666',
+            backgroundColor: '#f5f5f5',
+            borderRadius: '8px'
+          }}>
+            Žádná data pro vybrané období. Vytvořte první fakturu pro zobrazení grafu.
+          </div>
+        )}
       </div>
       <div className="recent-invoices">
         <h2>Poslední faktury</h2>
@@ -221,31 +236,39 @@ const Dashboard: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {dashboardData?.recentInvoices?.map((invoice: any) => (
-              <tr key={invoice.id}>
-                <td>{invoice.number}</td>
-                <td>{invoice.client_name}</td>
-                <td>{
-                  invoice.type === 'invoice' ? 'Faktura' : 
-                  invoice.type === 'received' ? 'Přijatá faktura' :
-                  invoice.type === 'advance' ? 'Zálohová faktura' :
-                  invoice.type === 'proforma' ? 'Záloha' : 
-                  'Nabídka'
-                }</td>
-                <td>{new Date(invoice.issue_date).toLocaleDateString('cs-CZ')}</td>
-                <td>{new Date(invoice.due_date).toLocaleDateString('cs-CZ')}</td>
-                <td>{invoice.total?.toFixed(2)} {invoice.currency}</td>
-                <td>
-                  <span className={`status-badge ${invoice.status}`}>
-                    {invoice.status === 'paid' ? 'Zaplaceno' : 
-                     invoice.status === 'unpaid' ? 'Nezaplaceno' : 
-                     invoice.status === 'draft' ? 'Koncept' :
-                     invoice.status === 'sent' ? 'Odesláno' :
-                     invoice.status}
-                  </span>
+            {dashboardData?.recentInvoices && dashboardData.recentInvoices.length > 0 ? (
+              dashboardData.recentInvoices.map((invoice: any) => (
+                <tr key={invoice.id}>
+                  <td>{invoice.number}</td>
+                  <td>{invoice.client_name}</td>
+                  <td>{
+                    invoice.type === 'invoice' ? 'Faktura' : 
+                    invoice.type === 'received' ? 'Přijatá faktura' :
+                    invoice.type === 'advance' ? 'Zálohová faktura' :
+                    invoice.type === 'proforma' ? 'Záloha' : 
+                    'Nabídka'
+                  }</td>
+                  <td>{new Date(invoice.issue_date).toLocaleDateString('cs-CZ')}</td>
+                  <td>{new Date(invoice.due_date).toLocaleDateString('cs-CZ')}</td>
+                  <td>{invoice.total?.toFixed(2)} {invoice.currency}</td>
+                  <td>
+                    <span className={`status-badge ${invoice.status}`}>
+                      {invoice.status === 'paid' ? 'Zaplaceno' : 
+                       invoice.status === 'unpaid' ? 'Nezaplaceno' : 
+                       invoice.status === 'draft' ? 'Koncept' :
+                       invoice.status === 'sent' ? 'Odesláno' :
+                       invoice.status}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '20px' }}>
+                  Žádné faktury k zobrazení
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
