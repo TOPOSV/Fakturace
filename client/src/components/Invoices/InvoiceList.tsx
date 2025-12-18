@@ -78,7 +78,7 @@ const InvoiceList: React.FC = () => {
       filtered = filtered.filter(inv => inv.status === 'overdue');
     } else if (statusFilter === 'archive') {
       // Show both cancelled and deleted invoices in archive
-      filtered = filtered.filter(inv => inv.status === 'cancelled' || inv.deleted_at !== null);
+      filtered = filtered.filter(inv => inv.status === 'cancelled' || inv.deleted_at != null);
     }
     
     // Apply column filters

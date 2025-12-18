@@ -47,7 +47,7 @@ export const getInvoice = (req: AuthRequest, res: Response) => {
      FROM invoices i 
      LEFT JOIN clients c ON i.client_id = c.id 
      LEFT JOIN users u ON i.user_id = u.id
-     WHERE i.id = ? AND i.user_id = ? AND i.deleted_at IS NULL`,
+     WHERE i.id = ? AND i.user_id = ?`,
     [id, req.userId],
     (err, invoice: any) => {
       if (err) {
@@ -388,18 +388,35 @@ export const createRegularFromAdvance = (req: AuthRequest, res: Response) => {
 export const deleteInvoice = (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
-  // Soft delete: set deleted_at timestamp instead of removing the record
-  db.run(
-    'UPDATE invoices SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ? AND deleted_at IS NULL',
+  // First check if this invoice has linked invoices (is referenced by other invoices)
+  db.get(
+    'SELECT COUNT(*) as count FROM invoices WHERE linked_invoice_id = ? AND user_id = ?',
     [id, req.userId],
-    function (err) {
+    (err, result: any) => {
       if (err) {
-        return res.status(500).json({ error: 'Failed to delete invoice' });
+        return res.status(500).json({ error: 'Failed to check invoice dependencies' });
       }
-      if (this.changes === 0) {
-        return res.status(404).json({ error: 'Invoice not found or already deleted' });
+
+      if (result && result.count > 0) {
+        return res.status(400).json({ 
+          error: 'Nelze smazat fakturu, která má navázané další faktury. Nejprve smažte závislé faktury.' 
+        });
       }
-      res.json({ message: 'Invoice deleted successfully' });
+
+      // Soft delete: set deleted_at timestamp instead of removing the record
+      db.run(
+        'UPDATE invoices SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ? AND deleted_at IS NULL',
+        [id, req.userId],
+        function (err) {
+          if (err) {
+            return res.status(500).json({ error: 'Failed to delete invoice' });
+          }
+          if (this.changes === 0) {
+            return res.status(404).json({ error: 'Invoice not found or already deleted' });
+          }
+          res.json({ message: 'Invoice deleted successfully' });
+        }
+      );
     }
   );
 };
