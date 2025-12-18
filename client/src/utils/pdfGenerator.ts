@@ -458,18 +458,18 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
     : [['Označení dodávky', 'Počet', 'Cena/j.', 'Celkem']];
   
   const columnStyles: any = isVatPayer ? {
-    0: { cellWidth: 50, halign: 'left' as const },     // Description
+    0: { cellWidth: 45, halign: 'left' as const },     // Description
     1: { cellWidth: 18, halign: 'center' as const },   // Quantity
-    2: { cellWidth: 25, halign: 'right' as const, minCellWidth: 25 },    // Unit price
+    2: { cellWidth: 23, halign: 'right' as const, minCellWidth: 23 },    // Unit price
     3: { cellWidth: 15, halign: 'center' as const },   // VAT rate
-    4: { cellWidth: 25, halign: 'right' as const, minCellWidth: 25 },    // Subtotal
+    4: { cellWidth: 23, halign: 'right' as const, minCellWidth: 23 },    // Subtotal
     5: { cellWidth: 20, halign: 'right' as const, minCellWidth: 20 },    // VAT
-    6: { cellWidth: 27, halign: 'right' as const, fontStyle: 'bold', minCellWidth: 27 }  // Total
+    6: { cellWidth: 26, halign: 'right' as const, fontStyle: 'bold', minCellWidth: 26 }  // Total
   } : {
-    0: { cellWidth: 90, halign: 'left' as const },     // Description (wider when no VAT columns)
+    0: { cellWidth: 85, halign: 'left' as const },     // Description (wider when no VAT columns)
     1: { cellWidth: 20, halign: 'center' as const },   // Quantity
-    2: { cellWidth: 35, halign: 'right' as const, minCellWidth: 35 },    // Unit price
-    3: { cellWidth: 35, halign: 'right' as const, fontStyle: 'bold', minCellWidth: 35 }  // Total
+    2: { cellWidth: 32, halign: 'right' as const, minCellWidth: 32 },    // Unit price
+    3: { cellWidth: 33, halign: 'right' as const, fontStyle: 'bold', minCellWidth: 33 }  // Total
   };
   
   autoTable(doc, {
@@ -721,10 +721,10 @@ export const generateInvoicePDF = async (invoice: InvoiceData, userData: UserDat
       }
     });
     
-    // Add QR code on LEFT side, at same height as stamp (side-by-side layout)
+    // Add QR code on LEFT side, 10mm higher than stamp (side-by-side layout)
     const qrSize = 35; // 35mm QR code
     const qrX = margin; // LEFT-aligned at margin
-    const qrY = stampYPos + 2; // Same height as stamp box
+    const qrY = stampYPos - 8; // 10mm higher than stamp box
     
     doc.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
     
