@@ -230,8 +230,8 @@ const Dashboard: React.FC = () => {
                 <td>{new Date(invoice.due_date).toLocaleDateString('cs-CZ')}</td>
                 <td>{invoice.total?.toFixed(2)} {invoice.currency}</td>
                 <td>
-                  <span className={`status-badge ${invoice.status || 'unknown'}`}>
-                    {invoice.status === 'paid' ? 'Zaplaceno' : invoice.status === 'unpaid' ? 'Nezaplaceno' : invoice.status || 'Neznámý'}
+                  <span className={`status-badge ${invoice.status || 'unpaid'}`}>
+                    {invoice.status === 'paid' ? 'Zaplaceno' : invoice.status === 'unpaid' ? 'Nezaplaceno' : invoice.status || 'Neuhrazeno'}
                   </span>
                 </td>
               </tr>
