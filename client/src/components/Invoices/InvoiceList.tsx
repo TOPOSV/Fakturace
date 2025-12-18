@@ -326,7 +326,7 @@ const InvoiceList: React.FC = () => {
   };
 
   const getStatusText = (status: string | null | undefined) => {
-    // Handle null, undefined, or empty status
+    // Handle null, undefined, or empty status (all treated as unknown)
     if (!status) {
       return 'NEZNÁMÝ';
     }
