@@ -399,7 +399,7 @@ export const deleteInvoice = (req: AuthRequest, res: Response) => {
 
       if (result && result.count > 0) {
         return res.status(400).json({ 
-          error: 'Nelze smazat fakturu, která má navázané další faktury. Nejprve smažte závislé faktury.' 
+          error: 'Cannot delete invoice with linked dependent invoices. Delete dependent invoices first.' 
         });
       }
 
