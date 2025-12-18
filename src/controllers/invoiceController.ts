@@ -4,7 +4,7 @@ import { AuthRequest } from '../middleware/auth';
 import { generateInvoiceNumber } from '../utils/helpers';
 
 export const getInvoices = (req: AuthRequest, res: Response) => {
-  const { type, status } = req.query;
+  const { type, status, include_deleted } = req.query;
   let sql = `
     SELECT i.*, c.company_name as client_name 
     FROM invoices i 
@@ -12,6 +12,11 @@ export const getInvoices = (req: AuthRequest, res: Response) => {
     WHERE i.user_id = ?
   `;
   const params: any[] = [req.userId];
+
+  // Exclude deleted invoices by default (unless include_deleted is true)
+  if (include_deleted !== 'true') {
+    sql += ' AND i.deleted_at IS NULL';
+  }
 
   if (type) {
     sql += ' AND i.type = ?';
@@ -42,7 +47,7 @@ export const getInvoice = (req: AuthRequest, res: Response) => {
      FROM invoices i 
      LEFT JOIN clients c ON i.client_id = c.id 
      LEFT JOIN users u ON i.user_id = u.id
-     WHERE i.id = ? AND i.user_id = ?`,
+     WHERE i.id = ? AND i.user_id = ? AND i.deleted_at IS NULL`,
     [id, req.userId],
     (err, invoice: any) => {
       if (err) {
@@ -383,13 +388,18 @@ export const createRegularFromAdvance = (req: AuthRequest, res: Response) => {
 export const deleteInvoice = (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
-  db.run('DELETE FROM invoices WHERE id = ? AND user_id = ?', [id, req.userId], function (err) {
-    if (err) {
-      return res.status(500).json({ error: 'Failed to delete invoice' });
+  // Soft delete: set deleted_at timestamp instead of removing the record
+  db.run(
+    'UPDATE invoices SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ? AND deleted_at IS NULL',
+    [id, req.userId],
+    function (err) {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to delete invoice' });
+      }
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Invoice not found or already deleted' });
+      }
+      res.json({ message: 'Invoice deleted successfully' });
     }
-    if (this.changes === 0) {
-      return res.status(404).json({ error: 'Invoice not found' });
-    }
-    res.json({ message: 'Invoice deleted successfully' });
-  });
+  );
 };

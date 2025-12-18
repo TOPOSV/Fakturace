@@ -55,6 +55,7 @@ export interface Invoice {
   items?: InvoiceItem[];
   linked_invoice_id?: number;
   auto_create_regular_invoice?: number;
+  deleted_at?: string | null;
 }
 
 export interface Transaction {
