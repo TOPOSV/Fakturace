@@ -331,19 +331,21 @@ const InvoiceList: React.FC = () => {
   };
 
   const getStatusText = (invoice: any) => {
-    // Check if invoice is deleted
-    if (invoice.deleted_at) {
-      return 'SMAZÁNO';
-    }
-    
     const statusMap: { [key: string]: string } = {
       'draft': 'KONCEPT',
       'sent': 'ODESLÁNO',
       'paid': 'UHRAZENO',
       'unpaid': 'NEUHRAZENO',
       'overdue': 'PO SPLATNOSTI',
-      'cancelled': 'ZRUŠENO'
+      'cancelled': 'ZRUŠENO',
+      'deleted': 'SMAZÁNO'
     };
+    
+    // Check if invoice is deleted
+    if (invoice.deleted_at) {
+      return statusMap['deleted'];
+    }
+    
     return (invoice.status && statusMap[invoice.status]) || (invoice.status ? invoice.status.toUpperCase() : '');
   };
 

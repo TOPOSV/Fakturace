@@ -388,33 +388,49 @@ export const createRegularFromAdvance = (req: AuthRequest, res: Response) => {
 export const deleteInvoice = (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
-  // First check if this invoice has linked invoices (is referenced by other invoices)
+  // First check if this invoice is already deleted
   db.get(
-    'SELECT COUNT(*) as count FROM invoices WHERE linked_invoice_id = ? AND user_id = ?',
+    'SELECT deleted_at FROM invoices WHERE id = ? AND user_id = ?',
     [id, req.userId],
-    (err, result: any) => {
+    (err, invoice: any) => {
       if (err) {
-        return res.status(500).json({ error: 'Failed to check invoice dependencies' });
+        return res.status(500).json({ error: 'Failed to check invoice status' });
+      }
+      
+      if (!invoice) {
+        return res.status(404).json({ error: 'Invoice not found' });
+      }
+      
+      if (invoice.deleted_at) {
+        return res.status(400).json({ error: 'Invoice is already deleted' });
       }
 
-      if (result && result.count > 0) {
-        return res.status(400).json({ 
-          error: 'Cannot delete invoice with linked dependent invoices. Delete dependent invoices first.' 
-        });
-      }
-
-      // Soft delete: set deleted_at timestamp instead of removing the record
-      db.run(
-        'UPDATE invoices SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ? AND deleted_at IS NULL',
+      // Check if this invoice has linked invoices (is referenced by other invoices)
+      db.get(
+        'SELECT COUNT(*) as count FROM invoices WHERE linked_invoice_id = ? AND user_id = ?',
         [id, req.userId],
-        function (err) {
+        (err, result: any) => {
           if (err) {
-            return res.status(500).json({ error: 'Failed to delete invoice' });
+            return res.status(500).json({ error: 'Failed to check invoice dependencies' });
           }
-          if (this.changes === 0) {
-            return res.status(404).json({ error: 'Invoice not found or already deleted' });
+
+          if (result && result.count > 0) {
+            return res.status(400).json({ 
+              error: 'Cannot delete invoice that is linked to other invoices. Delete linked invoices first.' 
+            });
           }
-          res.json({ message: 'Invoice deleted successfully' });
+
+          // Soft delete: set deleted_at timestamp
+          db.run(
+            'UPDATE invoices SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+            [id, req.userId],
+            function (err) {
+              if (err) {
+                return res.status(500).json({ error: 'Failed to delete invoice' });
+              }
+              res.json({ message: 'Invoice deleted successfully' });
+            }
+          );
         }
       );
     }
