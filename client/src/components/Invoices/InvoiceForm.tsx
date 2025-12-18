@@ -56,6 +56,11 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
     }
   }, [invoice, copyData]);
 
+  // Reset filtered clients when clients array changes
+  useEffect(() => {
+    handleClientSearch(clientSearch);
+  }, [clients]);
+
   const loadClients = async () => {
     try {
       const data = await clientService.getAll();
@@ -535,25 +540,23 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
                     <button
                       type="button"
                       onClick={() => removeItem(index)}
+                      className="btn-remove-item"
                       style={{ 
                         padding: '0',
                         width: '42px',
                         height: '42px',
-                        background: '#dc3545', 
+                        background: items.length === 1 ? '#ccc' : '#dc3545', 
                         color: 'white', 
                         border: 'none', 
                         borderRadius: '5px', 
-                        cursor: 'pointer',
+                        cursor: items.length === 1 ? 'not-allowed' : 'pointer',
                         fontSize: '20px',
                         fontWeight: 'bold',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'background 0.3s'
+                        justifyContent: 'center'
                       }}
                       disabled={items.length === 1}
-                      onMouseEnter={(e) => e.currentTarget.style.background = '#c82333'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = items.length === 1 ? '#ccc' : '#dc3545'}
                     >
                       ×
                     </button>
