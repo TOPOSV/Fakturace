@@ -175,9 +175,20 @@ export const createInvoice = (req: AuthRequest, res: Response) => {
 
 export const updateInvoice = (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const { status, notes } = req.body;
+  const { 
+    client_id,
+    type,
+    issue_date,
+    due_date,
+    tax_date,
+    items,
+    notes,
+    currency,
+    auto_create_regular_invoice,
+    status 
+  } = req.body;
 
-  // First get the invoice to check if it's an advance invoice with auto_create enabled
+  // First get the invoice to check ownership and type
   db.get('SELECT * FROM invoices WHERE id = ? AND user_id = ?', [id, req.userId], (err, invoice: any) => {
     if (err) {
       return res.status(500).json({ error: 'Failed to fetch invoice' });
@@ -186,9 +197,81 @@ export const updateInvoice = (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Invoice not found' });
     }
 
-    const sql = 'UPDATE invoices SET status = ?, notes = ? WHERE id = ? AND user_id = ?';
+    // If items are provided, recalculate totals
+    let subtotal = invoice.subtotal;
+    let totalVat = invoice.vat_amount;
+    let total = invoice.total;
+    
+    if (items && items.length > 0) {
+      subtotal = 0;
+      totalVat = 0;
+      
+      items.forEach((item: any) => {
+        const itemSubtotal = item.quantity * item.unit_price;
+        const itemVat = (itemSubtotal * (item.vat_rate || 21)) / 100;
+        subtotal += itemSubtotal;
+        totalVat += itemVat;
+      });
+      
+      total = subtotal + totalVat;
+    }
 
-    db.run(sql, [status, notes, id, req.userId], function (err) {
+    // Build update SQL dynamically based on provided fields
+    const updates: string[] = [];
+    const params: any[] = [];
+    
+    if (client_id !== undefined) {
+      updates.push('client_id = ?');
+      params.push(client_id);
+    }
+    if (type !== undefined) {
+      updates.push('type = ?');
+      params.push(type);
+    }
+    if (issue_date !== undefined) {
+      updates.push('issue_date = ?');
+      params.push(issue_date);
+    }
+    if (due_date !== undefined) {
+      updates.push('due_date = ?');
+      params.push(due_date);
+    }
+    if (tax_date !== undefined) {
+      updates.push('tax_date = ?');
+      params.push(tax_date);
+    }
+    if (items && items.length > 0) {
+      updates.push('subtotal = ?', 'vat_amount = ?', 'total = ?');
+      params.push(subtotal, totalVat, total);
+    }
+    if (currency !== undefined) {
+      updates.push('currency = ?');
+      params.push(currency);
+    }
+    if (notes !== undefined) {
+      updates.push('notes = ?');
+      params.push(notes);
+    }
+    if (auto_create_regular_invoice !== undefined) {
+      updates.push('auto_create_regular_invoice = ?');
+      params.push(auto_create_regular_invoice);
+    }
+    if (status !== undefined) {
+      updates.push('status = ?');
+      params.push(status);
+    }
+    
+    // Add WHERE clause params
+    params.push(id, req.userId);
+    
+    // Ensure we have at least one field to update
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+    
+    const sql = `UPDATE invoices SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`;
+
+    db.run(sql, params, function (err) {
       if (err) {
         return res.status(500).json({ error: 'Failed to update invoice' });
       }
@@ -196,32 +279,78 @@ export const updateInvoice = (req: AuthRequest, res: Response) => {
         return res.status(404).json({ error: 'Invoice not found' });
       }
 
-      // If this is an advance invoice being marked as paid and auto_create is enabled
-      if (invoice.type === 'advance' && status === 'paid' && invoice.auto_create_regular_invoice === 1 && !invoice.linked_invoice_id) {
-        // Update invoice object with new status for consistency
-        invoice.status = status;
-        createRegularInvoiceFromAdvance(invoice, req.userId!, (err, regularInvoiceId) => {
+      // If items are provided, update them
+      if (items && items.length > 0) {
+        // Delete old items
+        db.run('DELETE FROM invoice_items WHERE invoice_id = ?', [id], (err) => {
           if (err) {
-            console.error('Failed to auto-create regular invoice:', err);
-            return res.json({ 
-              message: 'Invoice updated successfully, but failed to create regular invoice',
-              warning: 'Failed to create regular invoice automatically'
-            });
+            console.error('Failed to delete old items:', err);
+            return res.status(500).json({ error: 'Failed to update invoice items' });
           }
           
-          // Update the advance invoice to link to the regular invoice
-          db.run('UPDATE invoices SET linked_invoice_id = ? WHERE id = ?', [regularInvoiceId, id], (err) => {
-            if (err) {
-              console.error('Failed to link invoices:', err);
-            }
-            res.json({ 
-              message: 'Invoice updated successfully and regular invoice created',
-              regularInvoiceId 
-            });
+          // Insert new items
+          const itemSql = `
+            INSERT INTO invoice_items (invoice_id, description, quantity, unit_price, vat_rate, total)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `;
+          
+          let itemsInserted = 0;
+          let hasError = false;
+          let responseSent = false;
+          
+          items.forEach((item: any) => {
+            const itemTotal = item.quantity * item.unit_price * (1 + (item.vat_rate || 21) / 100);
+            db.run(
+              itemSql,
+              [id, item.description, item.quantity, item.unit_price, item.vat_rate || 21, itemTotal],
+              (err) => {
+                if (err && !responseSent) {
+                  console.error('Error inserting item:', err);
+                  hasError = true;
+                  responseSent = true;
+                  return res.status(500).json({ error: 'Failed to insert invoice items' });
+                }
+                itemsInserted++;
+                if (itemsInserted === items.length && !hasError && !responseSent) {
+                  responseSent = true;
+                  checkAdvanceInvoiceAutoCreate();
+                }
+              }
+            );
           });
         });
       } else {
-        res.json({ message: 'Invoice updated successfully' });
+        checkAdvanceInvoiceAutoCreate();
+      }
+      
+      function checkAdvanceInvoiceAutoCreate() {
+        // If this is an advance invoice being marked as paid and auto_create is enabled
+        if (invoice.type === 'advance' && status === 'paid' && invoice.auto_create_regular_invoice === 1 && !invoice.linked_invoice_id) {
+          // Update invoice object with new status for consistency
+          invoice.status = status;
+          createRegularInvoiceFromAdvance(invoice, req.userId!, (err, regularInvoiceId) => {
+            if (err) {
+              console.error('Failed to auto-create regular invoice:', err);
+              return res.json({ 
+                message: 'Invoice updated successfully, but failed to create regular invoice',
+                warning: 'Failed to create regular invoice automatically'
+              });
+            }
+            
+            // Update the advance invoice to link to the regular invoice
+            db.run('UPDATE invoices SET linked_invoice_id = ? WHERE id = ?', [regularInvoiceId, id], (err) => {
+              if (err) {
+                console.error('Failed to link invoices:', err);
+              }
+              res.json({ 
+                message: 'Invoice updated successfully and regular invoice created',
+                regularInvoiceId 
+              });
+            });
+          });
+        } else {
+          res.json({ message: 'Invoice updated successfully' });
+        }
       }
     });
   });

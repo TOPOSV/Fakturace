@@ -325,7 +325,12 @@ const InvoiceList: React.FC = () => {
     loadInvoices();
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string | null | undefined) => {
+    // Handle null, undefined, or empty status - default to unpaid
+    if (!status) {
+      return 'NEUHRAZENO';
+    }
+    
     const statusMap: { [key: string]: string } = {
       'draft': 'KONCEPT',
       'sent': 'ODESLÁNO',
@@ -446,7 +451,7 @@ const InvoiceList: React.FC = () => {
                   <td>{new Date(invoice.due_date).toLocaleDateString('cs-CZ')}</td>
                   <td>{invoice.total?.toFixed(2)} {invoice.currency}</td>
                   <td>{subtotal?.toFixed(2)} {invoice.currency}</td>
-                  <td><span className={`status-badge ${invoice.status}`}>{getStatusText(invoice.status)}</span></td>
+                  <td><span className={`status-badge ${invoice.status || 'unpaid'}`}>{getStatusText(invoice.status)}</span></td>
                   <td className="action-buttons">
                     {/* Show "Create Regular Invoice" button for advance invoices that are paid and don't have linked invoice */}
                     {invoice.type === 'advance' && invoice.status === 'paid' && !invoice.linked_invoice_id && (
