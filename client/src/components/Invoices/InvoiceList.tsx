@@ -334,7 +334,7 @@ const InvoiceList: React.FC = () => {
       'overdue': 'PO SPLATNOSTI',
       'cancelled': 'ZRUŠENO'
     };
-    return statusMap[status] || status.toUpperCase();
+    return statusMap[status] || (status ? status.toUpperCase() : '');
   };
 
   // Pagination
