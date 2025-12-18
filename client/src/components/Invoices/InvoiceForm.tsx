@@ -58,7 +58,11 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
 
   // Reset filtered clients when clients array changes
   useEffect(() => {
-    handleClientSearch(clientSearch);
+    if (!clientSearch.trim()) {
+      setFilteredClients(clients);
+    } else {
+      handleClientSearch(clientSearch);
+    }
   }, [clients]);
 
   const loadClients = async () => {
@@ -304,7 +308,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
 
           {/* Show auto-create checkbox only for advance invoices */}
           {formData.type === 'advance' && (
-            <div className="form-group" style={{ background: '#f9f9f9', padding: '15px', borderRadius: '5px', border: '1px solid #e0e0e0' }}>
+            <div className="form-group auto-create-section">
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', margin: 0 }}>
                 <input
                   type="checkbox"
@@ -325,8 +329,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
           )}
 
           {showNewClientForm && (
-            <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '5px', marginBottom: '20px', border: '1px solid #ddd' }}>
-              <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>Nový klient</h3>
+            <div className="section-light-bg">
+              <h3>Nový klient</h3>
               <div className="form-row">
                 <div className="form-group flex-1">
                   <label>IČO *</label>
@@ -452,16 +456,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
           <div className="form-group">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
               <label style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Položky faktury *</label>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '20px',
-                background: '#f9f9f9',
-                padding: '8px 15px',
-                borderRadius: '5px',
-                border: '1px solid #e0e0e0'
-              }}>
-                <label style={{ margin: 0, fontSize: '14px', display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: '500' }}>
+              <div className="price-mode-selector">
+                <label style={{ margin: 0, fontSize: '14px', display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: '500', whiteSpace: 'nowrap' }}>
                   <input
                     type="radio"
                     checked={!pricesIncludeVat}
@@ -470,7 +466,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
                   />
                   Ceny bez DPH
                 </label>
-                <label style={{ margin: 0, fontSize: '14px', display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: '500' }}>
+                <label style={{ margin: 0, fontSize: '14px', display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: '500', whiteSpace: 'nowrap' }}>
                   <input
                     type="radio"
                     checked={pricesIncludeVat}
@@ -482,7 +478,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
               </div>
             </div>
             {items.map((item: any, index: number) => (
-              <div key={index} className="invoice-item" style={{ marginBottom: '10px', padding: '10px', background: '#f9f9f9', borderRadius: '5px', border: '1px solid #e0e0e0' }}>
+              <div key={index} className="invoice-item">
                 <div className="form-row" style={{ alignItems: 'flex-end' }}>
                   <div className="form-group flex-2" style={{ marginBottom: 0 }}>
                     <label style={{ fontSize: '12px', marginBottom: '5px', display: 'block', color: '#666', fontWeight: '500' }}>Název položky</label>
@@ -580,7 +576,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onClose, onSuccess, invoice, 
             />
           </div>
 
-          <div style={{ background: '#f5f5f5', padding: '15px', borderRadius: '5px', marginBottom: '20px' }}>
+          <div className="invoice-summary">
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
               <span>Základ:</span>
               <strong>{totals.subtotal.toFixed(2)} Kč</strong>
